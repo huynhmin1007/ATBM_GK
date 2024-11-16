@@ -41,11 +41,11 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     public JPanel keySizePanel, keyPanel, ivPanel;
     public MaterialLabel ivLabel, keyLabel;
 
-    private String oldPath;
+    public String oldPath;
 
-    private MaterialCombobox<String> algorithmCbb;
+    public MaterialCombobox<String> algorithmCbb;
 
-    private SymmetricFragment controller;
+    private SymmetricDecorator controller;
 
     public SymmetricConcrete() {
         setLayout(new GridBagLayout());
@@ -262,7 +262,6 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             return;
 
         FileHelper fileHelper = new FileHelper();
-        String key = keyEdt.getText();
         String path = fileHelper.showSaveFile(getRootPane(), oldPath, new String[]{"dat", "txt"});
 
         if (path != null && !path.isEmpty()) {
@@ -273,12 +272,16 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
                 out.writeUTF(mode);
                 out.writeUTF(padding);
                 out.writeInt(resolveValue(sf -> sf.getKeySize()));
-                out.writeUTF(key);
+                out.writeUTF(keyEdt.getText());
 
                 int ivSize = algorithm.getIVSize(mode);
                 if (ivSize != -1) {
                     out.writeInt(ivSize);
                     out.writeUTF(ivEdt.getText());
+                }
+
+                if (controller != null) {
+                    controller.saveKey(out);
                 }
 
                 int option = JOptionPane.showOptionDialog(
@@ -303,6 +306,10 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     }
 
     @Override
+    public void saveKey(DataOutputStream out) {
+    }
+
+    @Override
     public void loadKey() {
         FileHelper fileHelper = new FileHelper();
         File file = fileHelper.showOpenFile(getRootPane(), oldPath, new String[]{"dat", "txt"});
@@ -312,10 +319,6 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
             try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) {
                 String algorithmName = in.readUTF();
-                String mode = in.readUTF();
-                String padding = in.readUTF();
-                int keySize = in.readInt();
-                String key = in.readUTF();
 
                 if (!algorithmSupported.contains(algorithmName)) {
                     JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
@@ -327,6 +330,10 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
                 if (algorithmCbb != null) {
                     algorithmCbb.setSelectedItem(algorithmName);
                 }
+
+                String mode = in.readUTF();
+                String padding = in.readUTF();
+
 
                 if (!exist(getMode(), mode)) {
                     JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
@@ -344,33 +351,47 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
                 this.padding = padding;
 
-                if (Arrays.stream(algorithm.getKeySizeSupported()).noneMatch(v -> v == keySize)) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                keySizeCbb.setSelectedItem(keySize);
-                keyEdt.setText(key);
-
-                if (in.available() != 0) {
-                    int ivSize = in.readInt();
-                    String iv = in.readUTF();
-
-                    if (algorithm.getIVSize(mode) != ivSize) {
-                        JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                                "Lỗi", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    ivSizeEdt.setText(ivSize + "");
-                    ivEdt.setText(iv);
-                }
-
-                display();
+                if (controller != null) {
+                    controller.loadKey(in);
+                } else
+                    loadKey(in);
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(getRootPane(), "Không thể đọc tệp. Vui lòng thử lại.",
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    @Override
+    public void loadKey(DataInputStream in) {
+        try {
+            int keySize = in.readInt();
+            String key = in.readUTF();
+
+            if (!algorithm.validateKeySize(keySize)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            keySizeCbb.setSelectedItem(keySize);
+            keyEdt.setText(key);
+
+            if (in.available() != 0) {
+                int ivSize = in.readInt();
+                String iv = in.readUTF();
+
+                if (algorithm.getIVSize(mode) != ivSize) {
+                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                ivSizeEdt.setText(ivSize + "");
+                ivEdt.setText(iv);
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -391,6 +412,10 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             } else {
                 ivSizeEdt.setText("");
                 ivEdt.setText("");
+            }
+
+            if (controller != null) {
+                controller.generateKey();
             }
         } catch (NoSuchAlgorithmException ex) {
 
@@ -531,7 +556,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         return validateKeyAndIV();
     }
 
-    private <T> boolean exist(T[] values, T item) {
+    public <T> boolean exist(T[] values, T item) {
         return Arrays.stream(values).anyMatch(v -> v.equals(item));
     }
 
@@ -548,7 +573,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         return function.apply(controller != null ? controller : this);
     }
 
-    public void setController(SymmetricFragment controller) {
+    public void setController(SymmetricDecorator controller) {
         this.controller = controller;
     }
 }

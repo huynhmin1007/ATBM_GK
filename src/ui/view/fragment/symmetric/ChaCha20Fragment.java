@@ -8,8 +8,14 @@ import ui.common.Dimensions;
 import ui.view.component.EditText;
 import ui.view.component.MaterialLabel;
 
+import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.swing.*;
 import java.awt.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Base64;
 
 public class ChaCha20Fragment extends SymmetricDecorator {
 
@@ -17,9 +23,11 @@ public class ChaCha20Fragment extends SymmetricDecorator {
     private EditText counterEdt, nonceEdt;
     private EditText paramSpecEdt;
     private JPanel paramSpecPanel;
+    private MaterialLabel parameterLabel;
 
     public ChaCha20Fragment(SymmetricConcrete symmetricConcrete) {
         super(symmetricConcrete);
+
         algorithm = (ChaCha20) SymmetricFactory.getSymmetric(Algorithm.ChaCha20);
 
         counterEdt = new EditText();
@@ -45,6 +53,7 @@ public class ChaCha20Fragment extends SymmetricDecorator {
         paramSpecPanel.add(counterLabel, constraints);
 
         constraints.gridx = 1;
+        counterEdt.setText("0");
         paramSpecPanel.add(counterEdt, constraints);
 
         MaterialLabel nonceLabel = new MaterialLabel("Nonce:");
@@ -64,7 +73,7 @@ public class ChaCha20Fragment extends SymmetricDecorator {
         constraints.gridx = 0;
         constraints.gridy = 1;
         constraints.weightx = 0;
-        MaterialLabel parameterLabel = new MaterialLabel("Parameter");
+        parameterLabel = new MaterialLabel("Parameter");
         paramSpecPanel.add(parameterLabel, constraints);
 
         constraints.gridx = 1;
@@ -88,11 +97,97 @@ public class ChaCha20Fragment extends SymmetricDecorator {
         constraints.gridx = 0;
         constraints.gridy = 1;
         concrete.add(paramSpecPanel, constraints);
+        concrete.setController(this);
         super.display();
     }
 
     @Override
     public void close() {
         concrete.ivPanel.setVisible(true);
+        concrete.remove(paramSpecPanel);
+        concrete.setController(null);
+    }
+
+    @Override
+    public void generateKey() {
+        if (counterEdt.getText().isEmpty()) {
+            counterEdt.setText("0");
+        }
+        paramSpecEdt.hideError();
+        parameterLabel.deleteNotify();
+
+        algorithm.setCounter(Integer.parseInt(counterEdt.getText()));
+        ChaCha20ParameterSpec parameterSpec = algorithm.generateParamSpec();
+
+        ByteBuffer buffer = ByteBuffer.allocate(12 + 4);
+        buffer.put(parameterSpec.getNonce());
+        buffer.putInt(parameterSpec.getCounter());
+
+        paramSpecEdt.setText(Base64.getEncoder().encodeToString(buffer.array()));
+    }
+
+    @Override
+    public boolean validateInput() {
+        validateParamSpec();
+        return super.validateInput();
+    }
+
+    private boolean validateParamSpec() {
+        if (paramSpecEdt.getText().isEmpty()) {
+            paramSpecEdt.error("Vui lòng nhập Parameter");
+            parameterLabel.setNotify("");
+            return false;
+        }
+
+        paramSpecEdt.hideError();
+        parameterLabel.deleteNotify();
+
+        return true;
+    }
+
+    @Override
+    public void saveKey(DataOutputStream out) {
+        if (!validateInput())
+            return;
+
+        int counter = Integer.parseInt(counterEdt.getText());
+        int nonce = Integer.parseInt(nonceEdt.getText());
+        String parameter = paramSpecEdt.getText();
+
+        try {
+            out.writeInt(counter);
+            out.writeInt(nonce);
+            out.writeUTF(parameter);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    @Override
+    public void loadKey(DataInputStream in) {
+        try {
+            int keySize = in.readInt();
+            String key = in.readUTF();
+            int counter = in.readInt();
+            int nonce = in.readInt();
+            String parameter = in.readUTF();
+
+            if (!algorithm.validateKeySize(keySize)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            concrete.keySizeCbb.setSelectedItem(keySize);
+            concrete.keyEdt.setText(key);
+
+            counterEdt.setText(counter + "");
+            nonceEdt.setText(nonce + "");
+            paramSpecEdt.setText(parameter);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

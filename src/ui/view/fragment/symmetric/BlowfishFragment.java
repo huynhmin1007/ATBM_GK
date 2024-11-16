@@ -10,6 +10,8 @@ import ui.view.component.MaterialLabel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 public class BlowfishFragment extends SymmetricDecorator {
 
@@ -27,7 +29,7 @@ public class BlowfishFragment extends SymmetricDecorator {
         keySizeEdt.setNumericOnly();
 
         keySizePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Dimensions.MARGIN_HORIZONTAL, Dimensions.MARGIN_VERTICAL));
-        MaterialLabel keySizeLabel = new MaterialLabel("Key Size:");
+        keySizeLabel = new MaterialLabel("Key Size:");
         keySizeLabel.setNotify("");
         keySizeLabel.setPreferredSize(new Dimension(keySizeLabel.getPreferredSize().width + Dimensions.MARGIN_HORIZONTAL, keySizeLabel.getPreferredSize().height));
 
@@ -78,6 +80,10 @@ public class BlowfishFragment extends SymmetricDecorator {
         return super.validateInput();
     }
 
+    @Override
+    public void generateKey() {
+    }
+
     private boolean validateKeySize() {
         if (keySizeEdt.getText().isEmpty()) {
             keySizeEdt.error("Vui lòng nhập kích thước khóa");
@@ -86,6 +92,7 @@ public class BlowfishFragment extends SymmetricDecorator {
         }
 
         keySizeEdt.hideError();
+        keySizeLabel.deleteNotify();
 
         int keySize = Integer.parseInt(keySizeEdt.getText());
 
@@ -97,5 +104,38 @@ public class BlowfishFragment extends SymmetricDecorator {
         }
 
         return true;
+    }
+
+    @Override
+    public void loadKey(DataInputStream in) {
+        try {
+            int keySize = in.readInt();
+            String key = in.readUTF();
+
+            if (!algorithm.validateKeySize(keySize)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            keySizeEdt.setText(keySize + "");
+            concrete.keyEdt.setText(key);
+
+            if (in.available() != 0) {
+                int ivSize = in.readInt();
+                String iv = in.readUTF();
+
+                if (algorithm.getIVSize(concrete.mode) != ivSize) {
+                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                concrete.ivSizeEdt.setText(ivSize + "");
+                concrete.ivEdt.setText(iv);
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

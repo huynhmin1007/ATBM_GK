@@ -64,6 +64,7 @@ public abstract class Symmetric {
         this.padding = Padding.valueOf(padding);
     }
 
+    public abstract boolean validateKeySize(int keySize);
     public abstract boolean encryptFile(String src, String des, boolean append) throws FileNotFoundException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException;
     public abstract boolean decryptFile(String src, String des) throws FileNotFoundException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException;
 }

@@ -10,6 +10,8 @@ import ui.view.component.MaterialLabel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 public class ARCFOURFragment extends SymmetricDecorator {
 
@@ -81,6 +83,10 @@ public class ARCFOURFragment extends SymmetricDecorator {
         return super.validateInput();
     }
 
+    @Override
+    public void generateKey() {
+    }
+
     private boolean validateKeySize() {
         if (keySizeEdt.getText().isEmpty()) {
             keySizeEdt.error("Vui lòng nhập kích thước khóa");
@@ -89,6 +95,7 @@ public class ARCFOURFragment extends SymmetricDecorator {
         }
 
         keySizeEdt.hideError();
+        keySizeLabel.deleteNotify();
 
         int keySize = Integer.parseInt(keySizeEdt.getText());
 
@@ -100,5 +107,25 @@ public class ARCFOURFragment extends SymmetricDecorator {
         }
 
         return true;
+    }
+
+    @Override
+    public void loadKey(DataInputStream in) {
+        try {
+            int keySize = in.readInt();
+            String key = in.readUTF();
+
+            if (!algorithm.validateKeySize(keySize)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            keySizeEdt.setText(keySize + "");
+            concrete.keyEdt.setText(key);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

@@ -5,6 +5,8 @@ import ui.common.Dimensions;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 
 public abstract class SymmetricDecorator extends JPanel implements SymmetricFragment {
 
@@ -103,5 +105,14 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
     public boolean validateInput() {
         return concrete.validateInput();
     }
-}
 
+    @Override
+    public void loadKey(DataInputStream in) {
+        concrete.loadKey(in);
+    }
+
+    @Override
+    public void saveKey(DataOutputStream out) {
+        concrete.saveKey(out);
+    }
+}

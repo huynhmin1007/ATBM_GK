@@ -14,6 +14,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 
 public class DES extends Symmetric {
@@ -191,6 +192,11 @@ public class DES extends Symmetric {
     @Override
     public int[] getKeySizeSupported() {
         return new int[]{56};
+    }
+
+    @Override
+    public boolean validateKeySize(int keySize) {
+        return Arrays.stream(getKeySizeSupported()).anyMatch(v -> v == keySize);
     }
 
     @Override

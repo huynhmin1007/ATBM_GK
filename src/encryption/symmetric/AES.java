@@ -14,6 +14,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 
 public class AES extends Symmetric {
@@ -115,6 +116,11 @@ public class AES extends Symmetric {
 
     public String decryptBase64(String cipherText) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
         return new String(decrypt(Base64.getDecoder().decode(cipherText.getBytes())));
+    }
+
+    @Override
+    public boolean validateKeySize(int keySize) {
+        return Arrays.stream(getKeySizeSupported()).anyMatch(v -> v == keySize);
     }
 
     private Cipher initCipher(int opmode) throws InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {

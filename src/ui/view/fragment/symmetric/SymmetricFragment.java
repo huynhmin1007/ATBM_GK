@@ -1,5 +1,7 @@
 package ui.view.fragment.symmetric;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 
 public interface SymmetricFragment {
@@ -10,7 +12,11 @@ public interface SymmetricFragment {
 
     void saveKey();
 
+    void saveKey(DataOutputStream out);
+
     void loadKey();
+
+    void loadKey(DataInputStream in);
 
     void generateKey();
 

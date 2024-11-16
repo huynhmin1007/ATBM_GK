@@ -79,6 +79,11 @@ public class ARCFOUR extends Symmetric {
         return new String(decrypt(Base64.getDecoder().decode(cipherText.getBytes())));
     }
 
+    @Override
+    public boolean validateKeySize(int keySize) {
+        return keySize >= 40 && keySize <= 1024;
+    }
+
     private Cipher initCipher(int opmode) throws InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
         String transformation = StringHelper.generateString("/", algorithm, mode, padding);
         Cipher cipher = Cipher.getInstance(transformation);

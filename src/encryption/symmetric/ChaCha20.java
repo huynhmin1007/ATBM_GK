@@ -10,6 +10,7 @@ import javax.crypto.*;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -99,6 +100,11 @@ public class ChaCha20 extends Symmetric {
 
     public String decryptBase64(String cipherText) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
         return new String(decrypt(Base64.getDecoder().decode(cipherText.getBytes())));
+    }
+
+    @Override
+    public boolean validateKeySize(int keySize) {
+        return keySize == 256;
     }
 
     private Cipher initCipher(int opmode) throws InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
@@ -193,12 +199,17 @@ public class ChaCha20 extends Symmetric {
         return counter;
     }
 
+    public void setParamSpec(ChaCha20ParameterSpec paramSpec) {
+        this.paramSpec = paramSpec;
+    }
+
     public static void main(String[] args) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
         ChaCha20 chaCha20 = new ChaCha20();
         chaCha20.setKeySize(256);
         chaCha20.generateKey();
-        chaCha20.generateParamSpec();
         chaCha20.setCounter(1);
+//        chaCha20.generateParamSpec();
+        ChaCha20ParameterSpec param = chaCha20.generateParamSpec();
 
         String plt = "Đai học Nông Lâm";
 
@@ -207,5 +218,23 @@ public class ChaCha20 extends Symmetric {
 
         System.out.println(cpt);
         System.out.println(de);
+
+        ByteBuffer buffer = ByteBuffer.allocate(12 + 4);
+        buffer.put(param.getNonce());
+        buffer.putInt(param.getCounter());
+        String encode = Base64.getEncoder().encodeToString(buffer.array());
+
+        byte[] data = Base64.getDecoder().decode(encode);
+        if(data.length == 16) {
+            ByteBuffer b = ByteBuffer.wrap(data);
+            byte[] nonce = new byte[12];
+            b.get(nonce);
+            int counter = b.getInt();
+            ChaCha20ParameterSpec newParam = new ChaCha20ParameterSpec(nonce, counter);
+
+            chaCha20.setParamSpec(newParam);
+
+            System.out.println(chaCha20.decryptBase64(cpt));
+        }
     }
 }

@@ -63,7 +63,6 @@ public class EditText extends JPanel {
 
     public void hideError() {
         errorLabel.setVisible(false);
-
         refreshUI();
     }
 
