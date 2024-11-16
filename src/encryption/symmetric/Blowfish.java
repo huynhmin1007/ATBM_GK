@@ -16,10 +16,10 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
 
-public class AES extends Symmetric {
+public class Blowfish extends Symmetric {
 
-    public AES() {
-        algorithm = Algorithm.AES;
+    public Blowfish() {
+        algorithm = Algorithm.Blowfish;
         initAlgorithmSupported();
     }
 
@@ -43,10 +43,6 @@ public class AES extends Symmetric {
         algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.ECB, Padding.ISO10126Padding));
         algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.ECB, Padding.PKCS5Padding));
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.KW, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.KW, Padding.PKCS5Padding));
-
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.KWP, Padding.NoPadding));
 
         algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.OFB, Padding.NoPadding));
         algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.OFB, Padding.ISO10126Padding));
@@ -56,7 +52,6 @@ public class AES extends Symmetric {
         algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.PCBC, Padding.ISO10126Padding));
         algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.PCBC, Padding.PKCS5Padding));
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, Algorithm.AESWrap, Mode.ECB, Padding.NoPadding));
     }
 
     @Override
@@ -71,7 +66,7 @@ public class AES extends Symmetric {
 
     @Override
     public IvParameterSpec generateIV() {
-        byte[] ivBytes = new byte[16];
+        byte[] ivBytes = new byte[8];
         SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(ivBytes);
         iv = new IvParameterSpec(ivBytes);
@@ -197,13 +192,13 @@ public class AES extends Symmetric {
 
     @Override
     public int[] getKeySizeSupported() {
-        return new int[]{128, 192, 256};
+        return new int[]{128};
     }
 
     @Override
     public int getIVSize(String mode) {
         return switch (mode) {
-            case "CBC", "CFB", "CTR", "CTS", "OFB", "PCBC" -> 16;
+            case "CBC", "CFB", "CTR", "CTS", "OFB", "PCBC" -> 8;
             default -> -1;
         };
     }

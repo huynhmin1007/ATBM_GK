@@ -11,14 +11,15 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
     protected SymmetricConcrete concrete;
     protected GridBagConstraints gbc;
 
+    protected int x = 0, y = 0;
+
     protected SymmetricDecorator(SymmetricConcrete concrete) {
         this.concrete = concrete;
         setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = Dimensions.ZERO_INSETS;
         gbc.weightx = 1.0;
-        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, Dimensions.MARGIN_HORIZONTAL, Dimensions.MARGIN_VERTICAL, Dimensions.MARGIN_HORIZONTAL);
-        add(concrete, gbc);
     }
 
     @Override
@@ -28,6 +29,9 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
 
     @Override
     public void display() {
+        gbc.gridx = x;
+        gbc.gridy = y;
+        add(concrete, gbc);
         concrete.setAlgorithm(getAlgorithm());
         concrete.display();
     }
@@ -77,6 +81,7 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
     @Override
     public void configure() {
         concrete.configure();
+        concrete.algorithm.setKeySize(getKeySize());
     }
 
     @Override
@@ -87,6 +92,16 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
     @Override
     public boolean encryptFile(String src, String des) {
         return concrete.encryptFile(src, des);
+    }
+
+    @Override
+    public int getKeySize() {
+        return concrete.getKeySize();
+    }
+
+    @Override
+    public boolean validateInput() {
+        return concrete.validateInput();
     }
 }
 

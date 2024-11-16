@@ -7,9 +7,7 @@ import ui.view.component.FileLoader;
 import ui.view.component.MaterialCombobox;
 import ui.view.component.MaterialLabel;
 import ui.view.custom.BaseActivity;
-import ui.view.fragment.symmetric.AESFragment;
-import ui.view.fragment.symmetric.SymmetricConcrete;
-import ui.view.fragment.symmetric.SymmetricDecorator;
+import ui.view.fragment.symmetric.*;
 import utils.FileHelper;
 
 import javax.swing.*;
@@ -31,10 +29,11 @@ public class SymmetricActivity extends BaseActivity {
     private JTextArea inputTextArea;
     private FileLoader fileLoader;
     private MaterialCombobox<String> algorithmCbb;
+    private JPanel resultPanel;
     private JTabbedPane resultTabbedPane;
     private JTextArea encryptTextArea, decryptTextArea;
 
-    private AESFragment aesFragment;
+    private SymmetricDecorator aesFragment, desFragment, arcfourFragment, blowfishFragment, chacha20Fragment;
 
     private SymmetricDecorator decorator;
     private SymmetricConcrete symmetricConcrete;
@@ -43,10 +42,17 @@ public class SymmetricActivity extends BaseActivity {
 
     public SymmetricActivity() {
         setLayout(new BorderLayout());
+
         symmetricConcrete = new SymmetricConcrete();
-        aesFragment = new AESFragment(symmetricConcrete);
-        decorator = aesFragment;
         symmetricConcrete.setAlgorithm(SymmetricFactory.getSymmetric(Algorithm.AES));
+
+        aesFragment = new AESFragment(symmetricConcrete);
+        desFragment = new DESFragment(symmetricConcrete);
+        arcfourFragment = new ARCFOURFragment(symmetricConcrete);
+        blowfishFragment = new BlowfishFragment(symmetricConcrete);
+        chacha20Fragment = new ChaCha20Fragment(symmetricConcrete);
+
+        decorator = aesFragment;
 
         createContentPane();
         createInputPanel();
@@ -70,6 +76,7 @@ public class SymmetricActivity extends BaseActivity {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.weightx = 1.0;
+        gbc.insets = Dimensions.ZERO_INSETS;
 
         JScrollPane scrollPane = new JScrollPane(contentPane);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -78,13 +85,14 @@ public class SymmetricActivity extends BaseActivity {
     }
 
     private void createInputPanel() {
-        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, Dimensions.MARGIN_VERTICAL, Dimensions.MARGIN_HORIZONTAL);
         JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Dimensions.MARGIN_HORIZONTAL, 0));
         MaterialLabel label = new MaterialLabel("Loại dữ liệu:");
         inputPanel.add(label);
 
         JRadioButton textOption = new JRadioButton("Text");
         JRadioButton fileOption = new JRadioButton("File");
+        textOption.setMargin(new Insets(0, 10, 0, 10));
+        fileOption.setMargin(new Insets(0, 10, 0, 0));
         textOption.setSelected(true);
 
         inputPanel.add(textOption);
@@ -100,6 +108,7 @@ public class SymmetricActivity extends BaseActivity {
                 currentOption = "Text";
                 fileLoader.setVisible(false);
                 inputTextPanel.setVisible(true);
+                resultPanel.setVisible(true);
                 refreshUI();
             }
         });
@@ -110,13 +119,16 @@ public class SymmetricActivity extends BaseActivity {
                 currentOption = "File";
                 inputTextPanel.setVisible(false);
                 fileLoader.setVisible(true);
+                resultPanel.setVisible(false);
                 refreshUI();
             }
         });
 
         gbc.gridx = 0;
         gbc.gridy = 0;
+        gbc.insets = Dimensions.VERTICAL_INSETS;
         contentPane.add(inputPanel, gbc);
+        gbc.insets = Dimensions.ZERO_INSETS;
     }
 
     private void createInputTextPanel() {
@@ -124,8 +136,7 @@ public class SymmetricActivity extends BaseActivity {
         inputTextPanel.setLayout(new GridBagLayout());
 
         GridBagConstraints constraints = new GridBagConstraints();
-        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, Dimensions.MARGIN_VERTICAL, Dimensions.MARGIN_HORIZONTAL);
-        constraints.insets = new Insets(0, Dimensions.MARGIN_HORIZONTAL, 0, 0);
+        constraints.insets = Dimensions.DEFAULT_INSETS;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.NORTHWEST;
 
@@ -149,7 +160,7 @@ public class SymmetricActivity extends BaseActivity {
 
     private void createInputFilePanel() {
         fileLoader = new FileLoader("File");
-        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, Dimensions.MARGIN_VERTICAL, Dimensions.MARGIN_HORIZONTAL);
+        gbc.insets = Dimensions.DEFAULT_INSETS;
         gbc.gridx = 0;
         gbc.gridy = 1;
         contentPane.add(fileLoader, gbc);
@@ -157,6 +168,7 @@ public class SymmetricActivity extends BaseActivity {
         fileLoader.setVisible(false);
         fileLoader.setContainerPopup(this.getParent());
         fileLoader.browserBtn.addActionListener(e -> fileLoader.browseFile(null));
+        gbc.insets = Dimensions.ZERO_INSETS;
     }
 
     private void createInputAlgorithmPanel() {
@@ -164,13 +176,12 @@ public class SymmetricActivity extends BaseActivity {
         algorithmCbb = new MaterialCombobox<>(SymmetricConcrete.algorithmSupported.toArray(new String[0]));
 
         GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(0, Dimensions.MARGIN_HORIZONTAL, 0, Dimensions.MARGIN_HORIZONTAL);
+        constraints.insets = Dimensions.DEFAULT_INSETS;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.WEST;
 
         algorithmPanel.add(new MaterialLabel("Thuật toán:"), constraints);
 
-        constraints.insets = new Insets(0, 0, 0, Dimensions.MARGIN_HORIZONTAL);
         constraints.gridx = 1;
         constraints.weightx = 1;
         algorithmPanel.add(algorithmCbb, constraints);
@@ -178,7 +189,7 @@ public class SymmetricActivity extends BaseActivity {
         constraints.gridx = 2;
         constraints.weightx = 0;
         MaterialLabel modeLabel = new MaterialLabel("Mode:");
-        modeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        modeLabel.info.setHorizontalAlignment(SwingConstants.RIGHT);
         algorithmPanel.add(modeLabel, constraints);
 
         constraints.gridx = 3;
@@ -188,7 +199,7 @@ public class SymmetricActivity extends BaseActivity {
         constraints.gridx = 4;
         constraints.weightx = 0;
         MaterialLabel paddingLabel = new MaterialLabel("Padding:");
-        paddingLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        paddingLabel.info.setHorizontalAlignment(SwingConstants.RIGHT);
         algorithmPanel.add(paddingLabel, constraints);
 
         constraints.gridx = 5;
@@ -197,12 +208,12 @@ public class SymmetricActivity extends BaseActivity {
 
         gbc.gridx = 0;
         gbc.gridy = 2;
-        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, 0, 0);
         contentPane.add(algorithmPanel, gbc);
 
         algorithmCbb.addActionListener(e -> {
             contentPane.remove(decorator);
             String algorithm = algorithmCbb.getSelectedItem().toString();
+            decorator.close();
             decorator = getDecorator(algorithm);
             addDecorator(decorator);
             refreshUI();
@@ -212,12 +223,16 @@ public class SymmetricActivity extends BaseActivity {
     private SymmetricDecorator getDecorator(String algorithm) {
         return switch (algorithm) {
             case "AES" -> aesFragment;
+            case "DES" -> desFragment;
+            case "ARCFOUR" -> arcfourFragment;
+            case "Blowfish" -> blowfishFragment;
+            case "ChaCha20" -> chacha20Fragment;
             default -> aesFragment;
         };
     }
 
     private void addDecorator(SymmetricDecorator decorator) {
-        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.insets = Dimensions.ZERO_INSETS;
         gbc.gridx = 0;
         gbc.gridy = 3;
         contentPane.add(decorator, gbc);
@@ -225,10 +240,10 @@ public class SymmetricActivity extends BaseActivity {
     }
 
     private void createResultPanel() {
-        JPanel resultPanel = new JPanel(new GridBagLayout());
+        resultPanel = new JPanel(new GridBagLayout());
 
         GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(0, 0, Dimensions.MARGIN_VERTICAL, 0);
+        constraints.insets = Dimensions.HORIZONTAL_INSETS;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.WEST;
 
@@ -239,15 +254,19 @@ public class SymmetricActivity extends BaseActivity {
         resultPanel.add(resultLabel, constraints);
 
         encryptTextArea = new JTextArea(8, 10);
+        encryptTextArea.setEditable(false);
+        encryptTextArea.setBackground(Color.WHITE);
         JScrollPane scrollPane = new JScrollPane(encryptTextArea);
         scrollPane.setPreferredSize(new Dimension(200, encryptTextArea.getPreferredSize().height));
 
         decryptTextArea = new JTextArea(8, 10);
+        decryptTextArea.setEditable(false);
+        decryptTextArea.setBackground(Color.WHITE);
         JScrollPane scrollPane2 = new JScrollPane(decryptTextArea);
         scrollPane2.setPreferredSize(new Dimension(200, decryptTextArea.getPreferredSize().height));
 
         resultTabbedPane = new JTabbedPane();
-        constraints.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, Dimensions.MARGIN_VERTICAL, 0);
+        constraints.insets = new Insets(Dimensions.MARGIN_VERTICAL, Dimensions.MARGIN_HORIZONTAL, 0, Dimensions.MARGIN_HORIZONTAL);
         resultTabbedPane.add("Mã hóa", scrollPane);
         resultTabbedPane.add("Giải mã", scrollPane2);
 
@@ -256,7 +275,6 @@ public class SymmetricActivity extends BaseActivity {
         resultPanel.add(resultTabbedPane, constraints);
 
         gbc.gridy = 4;
-        gbc.insets = new Insets(0, Dimensions.MARGIN_HORIZONTAL, 0, Dimensions.MARGIN_HORIZONTAL);
         contentPane.add(resultPanel, gbc);
     }
 
@@ -308,7 +326,8 @@ public class SymmetricActivity extends BaseActivity {
         if (srcPath == null || srcPath.isEmpty()) {
             fileLoader.error("Vui lòng nhập đường dẫn");
             return;
-        }
+        } else
+            fileLoader.hideError();
 
         FileHelper fileHelper = new FileHelper();
         String desPath = fileHelper.showSaveFile(getRootPane(), srcPath, null);
@@ -359,7 +378,8 @@ public class SymmetricActivity extends BaseActivity {
         if (srcPath == null || srcPath.isEmpty()) {
             fileLoader.error("Vui lòng nhập đường dẫn");
             return;
-        }
+        } else
+            fileLoader.hideError();
 
         FileHelper fileHelper = new FileHelper();
         String desPath = fileHelper.showSaveFile(getRootPane(), srcPath, null);

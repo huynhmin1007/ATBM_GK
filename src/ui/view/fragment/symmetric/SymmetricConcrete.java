@@ -23,6 +23,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.*;
+import java.util.function.Function;
 
 public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
@@ -36,11 +37,15 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     public EditText keyEdt;
     public EditText ivSizeEdt;
     public EditText ivEdt;
-    private JButton loadKey, genKey, saveKey;
+    public JButton loadKey, genKey, saveKey;
+    public JPanel keySizePanel, keyPanel, ivPanel;
+    public MaterialLabel ivLabel, keyLabel;
 
     private String oldPath;
 
     private MaterialCombobox<String> algorithmCbb;
+
+    private SymmetricFragment controller;
 
     public SymmetricConcrete() {
         setLayout(new GridBagLayout());
@@ -48,12 +53,25 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, Dimensions.MARGIN_VERTICAL, Dimensions.MARGIN_HORIZONTAL);
+        gbc.insets = Dimensions.ZERO_INSETS;
+        gbc.weightx = 1.0;
 
         createModeAndPaddingGUI();
         createKeyGUI();
         createIVGUI();
         createButtonGroup();
+
+        genKey.addActionListener(e -> {
+            generateKey();
+        });
+
+        saveKey.addActionListener(e -> {
+            saveKey();
+        });
+
+        loadKey.addActionListener(e -> {
+            loadKey();
+        });
     }
 
     private void createModeAndPaddingGUI() {
@@ -70,62 +88,84 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     }
 
     private void createKeyGUI() {
-        JLabel keySizeLabel = new MaterialLabel("Key Size:");
-        JLabel keyLabel = new MaterialLabel("Key:");
+        MaterialLabel keySizeLabel = new MaterialLabel("Key Size:");
+        keyLabel = new MaterialLabel("Key:");
         keySizeCbb = new MaterialCombobox<>();
         keyEdt = new EditText();
+        keyEdt.setPreferredSize(new Dimension(140, keyEdt.getPreferredSize().height));
+
+        keyPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = Dimensions.DEFAULT_INSETS;
+
+        keySizePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Dimensions.MARGIN_HORIZONTAL, Dimensions.MARGIN_VERTICAL));
+        keySizeLabel.setPreferredSize(new Dimension(keySizeLabel.getPreferredSize().width + Dimensions.MARGIN_HORIZONTAL, keySizeLabel.getPreferredSize().height));
+
+        keySizePanel.add(keySizeLabel);
+        keySizePanel.add(keySizeCbb);
+
+        constraints.gridx = 0;
+        constraints.weightx = 1.0;
+        constraints.gridwidth = 2;
+        constraints.insets = Dimensions.ZERO_INSETS;
+        keyPanel.add(keySizePanel, constraints);
+
+        constraints.gridwidth = 1;
+        constraints.insets = Dimensions.DEFAULT_INSETS;
+        constraints.gridy = 1;
+        constraints.weightx = 0.0;
+        keyPanel.add(keyLabel, constraints);
+
+        constraints.gridx = 1;
+        constraints.weightx = 1.0;
+        keyPanel.add(keyEdt, constraints);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.weightx = 0.0;
-        add(keySizeLabel, gbc);
-
-        gbc.gridx = 1;
-        add(keySizeCbb, gbc);
-
-        gbc.gridx = 2;
-        gbc.weightx = 1.0;
-        add(new JPanel(), gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.weightx = 0.0;
-        add(keyLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.gridwidth = 2;
-        add(keyEdt, gbc);
+        add(keyPanel, gbc);
     }
 
     private void createIVGUI() {
-        JLabel ivSizeLabel = new MaterialLabel("IV Size:");
-        JLabel ivLabel = new MaterialLabel("IV:");
+        MaterialLabel ivSizeLabel = new MaterialLabel("IV Size:");
+        ivLabel = new MaterialLabel("IV:");
         ivSizeEdt = new EditText();
+        ivSizeEdt.setPreferredSize(new Dimension(140, ivSizeEdt.getPreferredSize().height));
         ivEdt = new EditText();
+        ivEdt.setPreferredSize(new Dimension(140, keyEdt.getPreferredSize().height));
+
+        ivPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = Dimensions.DEFAULT_INSETS;
+
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.weightx = 0.0;
+        ivPanel.add(ivSizeLabel, constraints);
+
+        constraints.gridx = 1;
+        ivPanel.add(ivSizeEdt, constraints);
+
+        constraints.gridx = 2;
+        constraints.weightx = 1.0;
+        ivPanel.add(new JPanel(), constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.weightx = 0.0;
+        ivPanel.add(ivLabel, constraints);
+
+        constraints.gridx = 1;
+        constraints.weightx = 1.0;
+        constraints.gridwidth = 2;
+        ivPanel.add(ivEdt, constraints);
 
         gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.weightx = 0.0;
-        gbc.gridwidth = 1;
-        add(ivSizeLabel, gbc);
-
-        gbc.gridx = 1;
-        add(ivSizeEdt, gbc);
-
-        gbc.gridx = 2;
-        gbc.weightx = 1.0;
-        add(new JPanel(), gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.weightx = 0.0;
-        add(ivLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.gridwidth = 2;
-        add(ivEdt, gbc);
+        gbc.gridy = 1;
+        add(ivPanel, gbc);
     }
 
     private void createButtonGroup() {
@@ -133,55 +173,47 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         loadKey = new JButton("Load");
         saveKey = new JButton("Save");
 
-        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, 0, 0);
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, Dimensions.MARGIN_HORIZONTAL, 0));
         btnPanel.add(genKey);
         btnPanel.add(loadKey);
         btnPanel.add(saveKey);
 
-        gbc.gridy = 4;
+        gbc.gridy = 2;
         add(btnPanel, gbc);
-
-        genKey.addActionListener(e -> {
-            generateKey();
-        });
-
-        saveKey.addActionListener(e -> {
-            saveKey();
-        });
-
-        loadKey.addActionListener(e -> {
-            loadKey();
-        });
     }
 
     public GridBagConstraints getGbc() {
         return gbc;
     }
 
-    private boolean validateKeyAndIV() {
+    public boolean validateKeyAndIV() {
         String key = keyEdt.getText().trim();
         int ivSize = algorithm.getIVSize(mode);
         String iv = ivEdt.getText().trim();
 
         if (!key.isEmpty()) {
             keyEdt.hideError();
+            keyLabel.deleteNotify();
 
             if (ivSize != -1 && iv.isEmpty()) {
                 ivEdt.error("Vui lòng nhập IV");
+                ivLabel.setNotify("");
                 return false;
             }
 
             ivEdt.hideError();
+            ivLabel.deleteNotify();
             return true;
         }
 
         if (key.isEmpty()) {
             keyEdt.error("Vui lòng nhập khóa");
+            keyLabel.setNotify("");
         }
 
         if (ivSize != -1 && iv.isEmpty()) {
             ivEdt.error("Vui lòng nhập IV");
+            ivLabel.setNotify("");
         }
 
         return false;
@@ -205,9 +237,12 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
         if (ivSize != -1) {
             ivSizeEdt.setText(ivSize + "");
-            ivSizeEdt.setEnabled(true);
+            ivSizeEdt.setEnabled(false);
             ivEdt.setEnabled(true);
         } else {
+            if (ivEdt.getText().trim().isEmpty()) {
+                ivSizeEdt.setText("");
+            }
             ivSizeEdt.setEnabled(false);
             ivEdt.setEnabled(false);
         }
@@ -237,7 +272,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
                 out.writeUTF(algorithm.getAlgorithm());
                 out.writeUTF(mode);
                 out.writeUTF(padding);
-                out.writeInt(Integer.parseInt(keySizeCbb.getSelectedItem().toString()));
+                out.writeInt(resolveValue(sf -> sf.getKeySize()));
                 out.writeUTF(key);
 
                 int ivSize = algorithm.getIVSize(mode);
@@ -345,7 +380,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             keyEdt.hideError();
             ivEdt.hideError();
 
-            int keySize = Integer.parseInt(keySizeCbb.getSelectedItem().toString());
+            int keySize = resolveValue(sf -> sf.getKeySize());
             algorithm.setKeySize(keySize);
             SecretKey key = algorithm.generateKey();
             keyEdt.setText(Base64.getEncoder().encodeToString(key.getEncoded()));
@@ -354,6 +389,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             if (ivSize != -1) {
                 ivEdt.setText(Base64.getEncoder().encodeToString(algorithm.generateIV().getIV()));
             } else {
+                ivSizeEdt.setText("");
                 ivEdt.setText("");
             }
         } catch (NoSuchAlgorithmException ex) {
@@ -396,13 +432,13 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     @Override
     public String encryptBase64(String plainText) {
         try {
-            if (!validateKeyAndIV())
+            if (!resolveValue(sf -> sf.validateInput()))
                 return null;
 
             configure();
             return algorithm.encryptBase64(plainText);
         } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
-                 InvalidKeyException | InvalidAlgorithmParameterException e) {
+                 InvalidKeyException | InvalidAlgorithmParameterException | IllegalArgumentException e) {
             JOptionPane.showMessageDialog(getRootPane(), "Mã hóa thất bại.\nError:\n" + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
             return null;
@@ -412,13 +448,13 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     @Override
     public String decryptBase64(String cipherText) {
         try {
-            if (!validateKeyAndIV())
+            if (!resolveValue(sf -> sf.validateInput()))
                 return null;
 
             configure();
             return algorithm.decryptBase64(cipherText);
         } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
-                 InvalidKeyException | InvalidAlgorithmParameterException e) {
+                 InvalidKeyException | InvalidAlgorithmParameterException | IllegalArgumentException e) {
             JOptionPane.showMessageDialog(getRootPane(), "Giải mã thất bại.\nError:\n" + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
             return null;
@@ -428,7 +464,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     @Override
     public boolean encryptFile(String src, String des) {
         try {
-            if (!validateKeyAndIV())
+            if (!resolveValue(sf -> sf.validateInput()))
                 return false;
 
             configure();
@@ -445,7 +481,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     @Override
     public boolean decryptFile(String src, String des) {
         try {
-            if (!validateKeyAndIV())
+            if (!resolveValue(sf -> sf.validateInput()))
                 return false;
 
             configure();
@@ -466,8 +502,13 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     }
 
     @Override
+    public void close() {
+
+    }
+
+    @Override
     public void configure() {
-        algorithm.setKeySize(Integer.parseInt(keySizeCbb.getSelectedItem().toString()));
+        algorithm.setKeySize(resolveValue(sf -> sf.getKeySize()));
         algorithm.setKey(new SecretKeySpec(Base64.getDecoder().decode(keyEdt.getText()), algorithm.getAlgorithm()));
         algorithm.setMode(modeCbb.getSelectedItem().toString());
         algorithm.setPadding(paddingCbb.getSelectedItem().toString());
@@ -480,11 +521,34 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         }
     }
 
+    @Override
+    public int getKeySize() {
+        return Integer.parseInt(keySizeCbb.getSelectedItem().toString());
+    }
+
+    @Override
+    public boolean validateInput() {
+        return validateKeyAndIV();
+    }
+
     private <T> boolean exist(T[] values, T item) {
         return Arrays.stream(values).anyMatch(v -> v.equals(item));
     }
 
     public void setAlgorithmCbb(MaterialCombobox<String> algorithmCbb) {
         this.algorithmCbb = algorithmCbb;
+    }
+
+    public void refreshUI() {
+        revalidate();
+        repaint();
+    }
+
+    public <T> T resolveValue(Function<SymmetricFragment, T> function) {
+        return function.apply(controller != null ? controller : this);
+    }
+
+    public void setController(SymmetricFragment controller) {
+        this.controller = controller;
     }
 }

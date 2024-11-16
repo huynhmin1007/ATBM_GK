@@ -9,17 +9,17 @@ import utils.FileHelper;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
+import java.util.stream.Collectors;
 
-public class AES extends Symmetric {
+public class ARCFOUR extends Symmetric {
 
-    public AES() {
-        algorithm = Algorithm.AES;
+    public ARCFOUR() {
+        algorithm = Algorithm.ARCFOUR;
         initAlgorithmSupported();
     }
 
@@ -28,35 +28,7 @@ public class AES extends Symmetric {
 
         String delimiter = "/";
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CBC, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CBC, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CBC, Padding.PKCS5Padding));
-
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CFB, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CFB, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CFB, Padding.PKCS5Padding));
-
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CTR, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CTS, Padding.NoPadding));
-
         algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.ECB, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.ECB, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.ECB, Padding.PKCS5Padding));
-
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.KW, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.KW, Padding.PKCS5Padding));
-
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.KWP, Padding.NoPadding));
-
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.OFB, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.OFB, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.OFB, Padding.PKCS5Padding));
-
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.PCBC, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.PCBC, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.PCBC, Padding.PKCS5Padding));
-
-        algorithmsSupported.add(StringHelper.generateString(delimiter, Algorithm.AESWrap, Mode.ECB, Padding.NoPadding));
     }
 
     @Override
@@ -71,17 +43,7 @@ public class AES extends Symmetric {
 
     @Override
     public IvParameterSpec generateIV() {
-        byte[] ivBytes = new byte[16];
-        SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(ivBytes);
-        iv = new IvParameterSpec(ivBytes);
-
-        return iv;
-    }
-
-    public void loadKeyAndIV(SecretKey key, IvParameterSpec iv) {
-        this.key = key;
-        this.iv = iv;
+        return null;
     }
 
     public void loadKey(SecretKey key) {
@@ -120,12 +82,7 @@ public class AES extends Symmetric {
     private Cipher initCipher(int opmode) throws InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
         String transformation = StringHelper.generateString("/", algorithm, mode, padding);
         Cipher cipher = Cipher.getInstance(transformation);
-
-        if (iv == null) {
-            cipher.init(opmode, key);
-        } else {
-            cipher.init(opmode, key, iv);
-        }
+        cipher.init(opmode, key);
 
         return cipher;
     }
@@ -197,14 +154,25 @@ public class AES extends Symmetric {
 
     @Override
     public int[] getKeySizeSupported() {
-        return new int[]{128, 192, 256};
+        return new int[]{128};
     }
 
     @Override
     public int getIVSize(String mode) {
-        return switch (mode) {
-            case "CBC", "CFB", "CTR", "CTS", "OFB", "PCBC" -> 16;
-            default -> -1;
-        };
+        return -1;
+    }
+
+    public static void main(String[] args) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+        List<String> algorithms = Arrays.stream(Security.getProviders())
+                .flatMap(provider -> provider.getServices().stream())
+                .filter(service -> "Cipher".equals(service.getType()))
+                .map(Provider.Service::getAlgorithm)
+                .collect(Collectors.toList());
+
+        algorithms.forEach(v -> {
+            if (v.contains("ARCFOUR")) {
+                System.out.println(v);
+            }
+        });
     }
 }

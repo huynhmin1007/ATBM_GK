@@ -3,6 +3,7 @@ package ui.view.component;
 import utils.FileHelper;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.io.File;
 
@@ -42,11 +43,11 @@ public class FileLoader extends JPanel {
     }
 
     public void setLabel(String text) {
-        label.setText(text);
+        label.info.setText(text);
     }
 
     public JLabel getLabel() {
-        return label;
+        return label.info;
     }
 
     /**
@@ -60,6 +61,7 @@ public class FileLoader extends JPanel {
 
         String filePath = fileHelper.showSaveFile(container, fileEdt.getText(), extensions);
         fileEdt.setText(filePath != null ? filePath : fileEdt.getText());
+        hideError();
     }
 
     /**
@@ -72,6 +74,7 @@ public class FileLoader extends JPanel {
         FileHelper fileHelper = new FileHelper();
         File file = fileHelper.showOpenFile(container, fileEdt.getText(), extensions);
         fileEdt.setText(file != null ? file.getAbsolutePath() : fileEdt.getText());
+        hideError();
     }
 
     public void setContainerPopup(Component container) {
@@ -84,9 +87,21 @@ public class FileLoader extends JPanel {
 
     public void error(String error) {
         fileEdt.error(error);
+        label.setNotify("");
+        gbc.gridx = 2;
+        gbc.weightx = 0.0;
+        gbc.insets = new Insets(0, MARGIN_HORIZONTAL, 25, 0);
+        add(browserBtn, gbc);
     }
 
     public void hideError() {
         fileEdt.hideError();
+        label.deleteNotify();
+
+        gbc.gridx = 2;
+        gbc.weightx = 0.0;
+        gbc.insets = new Insets(0, MARGIN_HORIZONTAL, 0, 0);
+        remove(browserBtn);
+        add(browserBtn, gbc);
     }
 }

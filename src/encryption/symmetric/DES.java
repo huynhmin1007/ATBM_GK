@@ -15,30 +15,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
 
-public class DES {
-
-    public static final Algorithm ALGORITHM_NAME = Algorithm.DES;
-
-    private Mode mode = Mode.CBC;
-    private Padding padding = Padding.PKCS5Padding;
-
-    private int keySize;
-
-    private SecretKey key;
-    private IvParameterSpec iv;
-
-    private List<String> algorithmsSupported;
-    private int[] keySizeSupported;
+public class DES extends Symmetric {
 
     public DES() {
-        initKeySizeSupported();
+        algorithm = Algorithm.DES;
         initAlgorithmSupported();
-    }
-
-    private void initKeySizeSupported() {
-        keySizeSupported = new int[]{128, 192, 256};
     }
 
     private void initAlgorithmSupported() {
@@ -46,39 +28,33 @@ public class DES {
 
         String delimiter = "/";
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.CBC, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.CBC, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.CBC, Padding.PKCS5Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CBC, Padding.NoPadding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CBC, Padding.ISO10126Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CBC, Padding.PKCS5Padding));
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.CFB, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.CFB, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.CFB, Padding.PKCS5Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CFB, Padding.NoPadding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CFB, Padding.ISO10126Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CFB, Padding.PKCS5Padding));
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.CTR, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.CTS, Padding.NoPadding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CTR, Padding.NoPadding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.CTS, Padding.NoPadding));
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.ECB, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.ECB, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.ECB, Padding.PKCS5Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.ECB, Padding.NoPadding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.ECB, Padding.ISO10126Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.ECB, Padding.PKCS5Padding));
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.OFB, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.OFB, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.OFB, Padding.PKCS5Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.OFB, Padding.NoPadding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.OFB, Padding.ISO10126Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.OFB, Padding.PKCS5Padding));
 
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.PCBC, Padding.NoPadding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.PCBC, Padding.ISO10126Padding));
-        algorithmsSupported.add(StringHelper.generateString(delimiter, ALGORITHM_NAME, Mode.PCBC, Padding.PKCS5Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.PCBC, Padding.NoPadding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.PCBC, Padding.ISO10126Padding));
+        algorithmsSupported.add(StringHelper.generateString(delimiter, algorithm, Mode.PCBC, Padding.PKCS5Padding));
     }
 
-    public void setTransformation(String transformation) {
-        String[] strs = transformation.split("/");
-
-        mode = Mode.valueOf(strs[1]);
-        padding = Padding.valueOf(strs[2]);
-    }
-
+    @Override
     public SecretKey generateKey() throws NoSuchAlgorithmException {
-        KeyGenerator keyGenerator = KeyGenerator.getInstance(ALGORITHM_NAME.name());
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(algorithm.name());
         keyGenerator.init(keySize);
 
         key = keyGenerator.generateKey();
@@ -86,6 +62,7 @@ public class DES {
         return key;
     }
 
+    @Override
     public IvParameterSpec generateIV() {
         byte[] ivBytes = new byte[8];
         SecureRandom secureRandom = new SecureRandom();
@@ -106,7 +83,6 @@ public class DES {
     }
 
     public byte[] encrypt(byte[] plainText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-        String transformation = ALGORITHM_NAME + "/" + mode + "/" + padding;
         Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
 
         return cipher.doFinal(plainText);
@@ -121,7 +97,6 @@ public class DES {
     }
 
     public byte[] decrypt(byte[] cipherText) throws InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-        String transformation = ALGORITHM_NAME + "/" + mode + "/" + padding;
         Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
 
         return cipher.doFinal(cipherText);
@@ -136,7 +111,7 @@ public class DES {
     }
 
     private Cipher initCipher(int opmode) throws InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
-        String transformation = StringHelper.generateString("/", ALGORITHM_NAME, mode, padding);
+        String transformation = StringHelper.generateString("/", algorithm, mode, padding);
         Cipher cipher = Cipher.getInstance(transformation);
 
         if (iv == null) {
@@ -148,6 +123,7 @@ public class DES {
         return cipher;
     }
 
+    @Override
     public boolean encryptFile(String src, String des, boolean append) throws FileNotFoundException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
         File srcFile = FileHelper.findFile(src);
         File desFile = new File(des);
@@ -170,6 +146,7 @@ public class DES {
         return true;
     }
 
+    @Override
     public boolean decryptFile(String src, String des) throws FileNotFoundException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
         File srcFile = FileHelper.findFile(src);
         File desFile = new File(des);
@@ -210,23 +187,17 @@ public class DES {
         }
     }
 
-    public void setKeySize(int keySize) {
-        this.keySize = keySize;
-    }
 
-    public void setMode(Mode mode) {
-        this.mode = mode;
-    }
-
-    public void setPadding(Padding padding) {
-        this.padding = padding;
-    }
-
-    public List<String> getAlgorithmsSupported() {
-        return algorithmsSupported;
-    }
-
+    @Override
     public int[] getKeySizeSupported() {
-        return keySizeSupported;
+        return new int[]{56};
+    }
+
+    @Override
+    public int getIVSize(String mode) {
+        return switch (mode) {
+            case "CBC", "CFB", "CTR", "CTS", "OFB", "PCBC" -> 8;
+            default -> -1;
+        };
     }
 }
