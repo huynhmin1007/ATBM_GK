@@ -19,6 +19,11 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
 import java.io.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -62,6 +67,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         createKeyGUI();
         createIVGUI();
         createButtonGroup();
+        addDragAndDrop();
 
         genKey.addActionListener(e -> {
             generateKey();
@@ -89,11 +95,41 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         });
     }
 
+    private void addDragAndDrop() {
+        new DropTarget(keyEdt.textField, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
+            @Override
+            public void drop(DropTargetDropEvent event) {
+                try {
+                    event.acceptDrop(DnDConstants.ACTION_COPY);
+
+                    Object droppedData = event.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+
+                    if (droppedData instanceof List) {
+                        List<File> fileList = (List<File>) droppedData;
+                        if (!fileList.isEmpty()) {
+                            File droppedFile = fileList.get(0);
+
+                            if (droppedFile.isFile()) {
+                                loadKey(droppedFile);
+                            } else {
+                                JOptionPane.showMessageDialog(getRootPane(), "Vui lòng nhập vào File, không phải Folder.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
     private void createKeyGUI() {
         MaterialLabel keySizeLabel = new MaterialLabel("Key Size:");
         keyLabel = new MaterialLabel("Key:");
         keySizeCbb = new MaterialCombobox<>();
         keyEdt = new EditText();
+        keyLabel.setNotify("");
+        keyEdt.setInfo("Kéo và thả File vào đây để load Key");
         keyEdt.setPreferredSize(new Dimension(140, keyEdt.getPreferredSize().height));
 
         keyPanel = new JPanel(new GridBagLayout());
@@ -264,7 +300,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             return;
 
         FileHelper fileHelper = new FileHelper();
-        String path = fileHelper.showSaveFile(getRootPane(), oldPath, new String[]{"dat", "txt"});
+        String path = fileHelper.showSaveFile(getRootPane(), oldPath, new String[]{"dat", "key"});
 
         if (path != null && !path.isEmpty()) {
             oldPath = path;
@@ -318,49 +354,53 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
         if (file != null && file.exists()) {
             oldPath = file.getAbsolutePath();
+            loadKey(file);
+        }
+    }
 
-            try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) {
-                String algorithmName = in.readUTF();
+    public void loadKey(File file) {
+        try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) {
+            String algorithmName = in.readUTF();
 
-                if (!algorithmSupported.contains(algorithmName)) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                setAlgorithm(SymmetricFactory.getSymmetric(Algorithm.valueOf(algorithmName)));
-                if (algorithmCbb != null) {
-                    algorithmCbb.setSelectedItem(algorithmName);
-                }
-
-                String mode = in.readUTF();
-                String padding = in.readUTF();
-
-
-                if (!exist(getMode(), mode)) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                this.mode = mode;
-
-                if (!exist(getPadding(mode), padding)) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                this.padding = padding;
-
-                if (controller != null) {
-                    controller.loadKey(in);
-                } else
-                    loadKey(in);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(getRootPane(), "Không thể đọc tệp. Vui lòng thử lại.",
+            if (!algorithmSupported.contains(algorithmName)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+
+            setAlgorithm(SymmetricFactory.getSymmetric(Algorithm.valueOf(algorithmName)));
+            if (algorithmCbb != null) {
+                algorithmCbb.setSelectedItem(algorithmName);
+            }
+
+            String mode = in.readUTF();
+            String padding = in.readUTF();
+
+            if (!exist(getMode(), mode)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            this.mode = mode;
+            modeCbb.setSelectedItem(mode);
+
+            if (!exist(getPadding(mode), padding)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            this.padding = padding;
+            paddingCbb.setSelectedItem(padding);
+
+            if (controller != null) {
+                controller.loadKey(in);
+            } else
+                loadKey(in);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(getRootPane(), "Không thể đọc tệp. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -390,6 +430,11 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
                 }
                 ivSizeEdt.setText(ivSize + "");
                 ivEdt.setText(iv);
+            } else {
+                ivSizeEdt.setText("");
+                ivEdt.setText("");
+                ivSizeEdt.setEnabled(false);
+                ivEdt.setEnabled(false);
             }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
@@ -609,5 +654,13 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
     public void setController(SymmetricDecorator controller) {
         this.controller = controller;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public void setPadding(String padding) {
+        this.padding = padding;
     }
 }

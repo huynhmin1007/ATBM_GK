@@ -15,6 +15,11 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
 import java.io.*;
 import java.security.*;
 import java.util.List;
@@ -53,6 +58,7 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
         createModeAndPaddingGUI();
         createKeyGUI();
         createButtonGroup();
+        addDragAndDrop();
 
         genKey.addActionListener(e -> {
             generateKey();
@@ -233,7 +239,7 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             return;
 
         FileHelper fileHelper = new FileHelper();
-        String path = fileHelper.showSaveFile(getRootPane(), oldPath, new String[]{"dat", "txt"});
+        String path = fileHelper.showSaveFile(getRootPane(), oldPath, new String[]{"dat", "key"});
 
         if (path != null && !path.isEmpty()) {
             oldPath = path;
@@ -275,56 +281,114 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
     public void saveKey(DataOutputStream out) {
     }
 
+    private void addDragAndDrop() {
+        new DropTarget(privateKeyEdt.textField, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
+            @Override
+            public void drop(DropTargetDropEvent event) {
+                try {
+                    event.acceptDrop(DnDConstants.ACTION_COPY);
+
+                    Object droppedData = event.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+
+                    if (droppedData instanceof List) {
+                        List<File> fileList = (List<File>) droppedData;
+                        if (!fileList.isEmpty()) {
+                            File droppedFile = fileList.get(0);
+
+                            if (droppedFile.isFile()) {
+                                loadKey(droppedFile);
+                            } else {
+                                JOptionPane.showMessageDialog(getRootPane(), "Vui lòng nhập vào File, không phải Folder.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        new DropTarget(publicKeyEdt.textField, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
+            @Override
+            public void drop(DropTargetDropEvent event) {
+                try {
+                    event.acceptDrop(DnDConstants.ACTION_COPY);
+
+                    Object droppedData = event.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+
+                    if (droppedData instanceof List) {
+                        List<File> fileList = (List<File>) droppedData;
+                        if (!fileList.isEmpty()) {
+                            File droppedFile = fileList.get(0);
+
+                            if (droppedFile.isFile()) {
+                                loadKey(droppedFile);
+                            } else {
+                                JOptionPane.showMessageDialog(getRootPane(), "Vui lòng nhập vào File, không phải Folder.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public void loadKey(File file) {
+        try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) {
+            String algorithmName = in.readUTF();
+
+            if (!algorithmSupported.contains(algorithmName)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            setAlgorithm(ASymmetricFactory.getASymmetric(Algorithm.valueOf(algorithmName)));
+            if (algorithmCbb != null) {
+                algorithmCbb.setSelectedItem(algorithmName);
+            }
+
+            String mode = in.readUTF();
+            String padding = in.readUTF();
+
+            if (!exist(getMode(), mode)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            this.mode = mode;
+            modeCbb.setSelectedItem(mode);
+
+            if (!exist(getPadding(mode), padding)) {
+                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            this.padding = padding;
+            paddingCbb.setSelectedItem(padding);
+
+            if (controller != null) {
+                controller.loadKey(in);
+            } else
+                loadKey(in);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(getRootPane(), "Không thể đọc tệp. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     @Override
     public void loadKey() {
         FileHelper fileHelper = new FileHelper();
-        File file = fileHelper.showOpenFile(getRootPane(), oldPath, new String[]{"dat", "txt"});
+        File file = fileHelper.showOpenFile(getRootPane(), oldPath, new String[]{"dat", "key"});
 
         if (file != null && file.exists()) {
             oldPath = file.getAbsolutePath();
-
-            try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) {
-                String algorithmName = in.readUTF();
-
-                if (!algorithmSupported.contains(algorithmName)) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                setAlgorithm(ASymmetricFactory.getASymmetric(Algorithm.valueOf(algorithmName)));
-                if (algorithmCbb != null) {
-                    algorithmCbb.setSelectedItem(algorithmName);
-                }
-
-                String mode = in.readUTF();
-                String padding = in.readUTF();
-
-
-                if (!exist(getMode(), mode)) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                this.mode = mode;
-
-                if (!exist(getPadding(mode), padding)) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                this.padding = padding;
-
-                if (controller != null) {
-                    controller.loadKey(in);
-                } else
-                    loadKey(in);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(getRootPane(), "Không thể đọc tệp. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
+            loadKey(file);
         }
     }
 
@@ -622,5 +686,13 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
 
     public void setController(ASymmetricDecorator controller) {
         this.controller = controller;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public void setPadding(String padding) {
+        this.padding = padding;
     }
 }

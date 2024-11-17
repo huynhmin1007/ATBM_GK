@@ -7,6 +7,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.PlainDocument;
 import java.awt.*;
+import java.awt.dnd.DropTarget;
 
 public class EditText extends JPanel {
 
@@ -69,6 +70,7 @@ public class EditText extends JPanel {
     public void hideError() {
         if (showError) {
             showError = false;
+            remove(errorLabel);
             errorLabel.setVisible(false);
             refreshUI();
         }
