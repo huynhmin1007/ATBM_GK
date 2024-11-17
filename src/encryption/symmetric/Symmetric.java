@@ -1,5 +1,6 @@
 package encryption.symmetric;
 
+import encryption.asymmetric.RSA;
 import encryption.common.Algorithm;
 import encryption.common.Mode;
 import encryption.common.Padding;
@@ -10,6 +11,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -38,6 +40,7 @@ public abstract class Symmetric {
     public abstract IvParameterSpec generateIV();
 
     public abstract String encryptBase64(String plainText) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException;
+
     public abstract String decryptBase64(String cipherText) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException;
 
     public void setKeySize(int keySize) {
@@ -56,15 +59,43 @@ public abstract class Symmetric {
         this.iv = iv;
     }
 
-    public void setMode(String mode) {
-        this.mode = Mode.valueOf(mode);
+    public void setMode(Mode mode) {
+        this.mode = mode;
     }
 
-    public void setPadding(String padding) {
-        this.padding = Padding.valueOf(padding);
+    public void setPadding(Padding padding) {
+        this.padding = padding;
     }
+
+    public int getKeySize() {
+        return this.keySize;
+    }
+
+    public SecretKey getKey() {
+        return this.key;
+    }
+
+    public IvParameterSpec getIv() {
+        return this.iv;
+    }
+
+    public String getMode() {
+        return this.mode.name();
+    }
+
+    public String getPadding() {
+        return this.padding.name();
+    }
+
+    public abstract boolean decryptFile(InputStream is, String des) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException;
+
+    public abstract void saveConfigure(String des, RSA asymmetric, boolean append) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException;
+
+    public abstract InputStream loadConfigure(InputStream is, RSA asymmetric) throws IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException;
 
     public abstract boolean validateKeySize(int keySize);
+
     public abstract boolean encryptFile(String src, String des, boolean append) throws FileNotFoundException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException;
+
     public abstract boolean decryptFile(String src, String des) throws FileNotFoundException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException;
 }

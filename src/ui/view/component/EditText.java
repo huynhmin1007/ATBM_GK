@@ -14,6 +14,8 @@ public class EditText extends JPanel {
     public JLabel errorLabel;
     public JLabel infoLabel;
 
+    private boolean showError;
+
     public EditText() {
         textField = new JTextField();
         errorLabel = new JLabel();
@@ -50,10 +52,13 @@ public class EditText extends JPanel {
     }
 
     public void error(String error) {
-        errorLabel.setText(error);
-        errorLabel.setVisible(true);
-        setPreferredSize(new Dimension(getPreferredSize().width, getPreferredSize().height + errorLabel.getPreferredSize().height));
-        refreshUI();
+        if (!showError) {
+            errorLabel.setText(error);
+            errorLabel.setVisible(true);
+            setPreferredSize(new Dimension(getPreferredSize().width, getPreferredSize().height + errorLabel.getPreferredSize().height));
+            refreshUI();
+            showError = true;
+        }
     }
 
     private void refreshUI() {
@@ -62,8 +67,11 @@ public class EditText extends JPanel {
     }
 
     public void hideError() {
-        errorLabel.setVisible(false);
-        refreshUI();
+        if (showError) {
+            showError = false;
+            errorLabel.setVisible(false);
+            refreshUI();
+        }
     }
 
     public void setInfo(String info) {
@@ -83,6 +91,10 @@ public class EditText extends JPanel {
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         textField.setEnabled(enabled);
+        if (!enabled) {
+        } else {
+            textField.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        }
     }
 
     public void setNumericOnly() {

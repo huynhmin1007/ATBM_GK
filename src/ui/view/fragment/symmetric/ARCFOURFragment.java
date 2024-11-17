@@ -12,6 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Base64;
 
 public class ARCFOURFragment extends SymmetricDecorator {
 
@@ -43,6 +44,11 @@ public class ARCFOURFragment extends SymmetricDecorator {
     }
 
     @Override
+    public void setAlgorithm(Symmetric algorithm) {
+        this.algorithm = (ARCFOUR) algorithm;
+    }
+
+    @Override
     public void display() {
         concrete.keySizePanel.setVisible(false);
         concrete.setController(this);
@@ -59,6 +65,15 @@ public class ARCFOURFragment extends SymmetricDecorator {
         concrete.ivPanel.setVisible(false);
 
         super.display();
+    }
+
+    @Override
+    public void displayWithAttributes() {
+        if (algorithm == null)
+            return;
+
+        keySizeEdt.setText(algorithm.getKeySize() + "");
+        concrete.keyEdt.setText(Base64.getEncoder().encodeToString(algorithm.getKey().getEncoded()));
     }
 
     @Override

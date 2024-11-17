@@ -8,23 +8,27 @@ public class MaterialCombobox<T> extends JComboBox<T> {
 
     public MaterialCombobox(ComboBoxModel<T> aModel) {
         super(aModel);
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setMaximumRowCount(5);
         setPreferredSize(new Dimension(140, getPreferredSize().height));
     }
 
     public MaterialCombobox(T[] items) {
         super(items);
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setMaximumRowCount(5);
         setPreferredSize(new Dimension(140, getPreferredSize().height));
     }
 
     public MaterialCombobox(Vector<T> items) {
         super(items);
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setMaximumRowCount(5);
         setPreferredSize(new Dimension(140, getPreferredSize().height));
     }
 
     public MaterialCombobox() {
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setMaximumRowCount(5);
         setPreferredSize(new Dimension(140, getPreferredSize().height));
     }

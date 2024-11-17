@@ -1,5 +1,6 @@
 package encryption.symmetric;
 
+import encryption.asymmetric.RSA;
 import encryption.common.Algorithm;
 import encryption.common.Mode;
 import encryption.common.Padding;
@@ -9,6 +10,7 @@ import utils.FileHelper;
 import javax.crypto.*;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
@@ -22,6 +24,7 @@ public class ChaCha20 extends Symmetric {
 
     private ChaCha20ParameterSpec paramSpec;
     private int counter;
+    private int nonce = 12;
 
     public ChaCha20() {
         algorithm = Algorithm.ChaCha20;
@@ -54,8 +57,16 @@ public class ChaCha20 extends Symmetric {
         return null;
     }
 
+    public int getNonce() {
+        return nonce;
+    }
+
+    public void setNonce(int nonce) {
+        this.nonce = nonce;
+    }
+
     public ChaCha20ParameterSpec generateParamSpec() {
-        byte[] nonce = new byte[12];
+        byte[] nonce = new byte[getNonce()];
         SecureRandom random = new SecureRandom();
         random.nextBytes(nonce);
 
@@ -100,6 +111,47 @@ public class ChaCha20 extends Symmetric {
 
     public String decryptBase64(String cipherText) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
         return new String(decrypt(Base64.getDecoder().decode(cipherText.getBytes())));
+    }
+
+    @Override
+    public void saveConfigure(String des, RSA asymmetric, boolean append) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(des, append));
+             DataOutputStream out = new DataOutputStream(bos)) {
+            out.writeUTF(mode.name());
+            out.writeUTF(padding.name());
+
+            byte[] keyBytes = asymmetric.encrypt(key.getEncoded());
+            out.writeInt(keySize);
+            out.writeInt(keyBytes.length);
+            out.write(keyBytes);
+
+            byte[] paramBytes = asymmetric.encrypt(getParamSpec());
+            out.writeInt(paramBytes.length);
+            out.write(paramBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public InputStream loadConfigure(InputStream is, RSA asymmetric) throws IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        BufferedInputStream bis = new BufferedInputStream(is);
+        DataInputStream in = new DataInputStream(bis);
+        try {
+            mode = Mode.valueOf(in.readUTF());
+            padding = Padding.valueOf(in.readUTF());
+            keySize = in.readInt();
+            int keyLength = in.readInt();
+            byte[] keyDecrypt = asymmetric.decrypt(in.readNBytes(keyLength));
+            key = new SecretKeySpec(keyDecrypt, algorithm.name());
+
+            int paramLength = in.readInt();
+            byte[] paramDecrypt = asymmetric.decrypt(in.readNBytes(paramLength));
+            setParamSpec(Base64.getDecoder().decode(paramDecrypt));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bis;
     }
 
     @Override
@@ -161,7 +213,8 @@ public class ChaCha20 extends Symmetric {
         return true;
     }
 
-    public void decryptFile(InputStream is, String des) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
+    @Override
+    public boolean decryptFile(InputStream is, String des) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
         File desFile = new File(des);
 
         Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
@@ -174,12 +227,38 @@ public class ChaCha20 extends Symmetric {
             while ((bytesRead = in.read(bufferBytes)) != -1) {
                 out.write(bufferBytes, 0, bytesRead);
             }
+            return true;
         } catch (IOException e) {
             desFile.delete();
-            throw new RuntimeException(e);
+            return false;
         }
     }
 
+    public String getParamSpec() {
+        ByteBuffer buffer = ByteBuffer.allocate(12 + 4);
+        buffer.put(paramSpec.getNonce());
+        buffer.putInt(paramSpec.getCounter());
+
+        return Base64.getEncoder().encodeToString(buffer.array());
+    }
+
+    public void setParamSpec(String encode) {
+        setParamSpec(encode.getBytes());
+    }
+
+    public void setParamSpec(byte[] encode) {
+        ByteBuffer buffer = ByteBuffer.wrap(encode);
+        byte[] nonce = new byte[getNonce()];
+        buffer.get(nonce);
+        int counter = buffer.getInt();
+
+        this.paramSpec = new ChaCha20ParameterSpec(nonce, counter);
+        this.counter = counter;
+    }
+
+    public int getCounter() {
+        return this.counter;
+    }
 
     @Override
     public int[] getKeySizeSupported() {
@@ -193,48 +272,5 @@ public class ChaCha20 extends Symmetric {
 
     public void setCounter(int counter) {
         this.counter = counter;
-    }
-
-    public int getCounter() {
-        return counter;
-    }
-
-    public void setParamSpec(ChaCha20ParameterSpec paramSpec) {
-        this.paramSpec = paramSpec;
-    }
-
-    public static void main(String[] args) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-        ChaCha20 chaCha20 = new ChaCha20();
-        chaCha20.setKeySize(256);
-        chaCha20.generateKey();
-        chaCha20.setCounter(1);
-//        chaCha20.generateParamSpec();
-        ChaCha20ParameterSpec param = chaCha20.generateParamSpec();
-
-        String plt = "Đai học Nông Lâm";
-
-        String cpt = chaCha20.encryptBase64(plt);
-        String de = chaCha20.decryptBase64(cpt);
-
-        System.out.println(cpt);
-        System.out.println(de);
-
-        ByteBuffer buffer = ByteBuffer.allocate(12 + 4);
-        buffer.put(param.getNonce());
-        buffer.putInt(param.getCounter());
-        String encode = Base64.getEncoder().encodeToString(buffer.array());
-
-        byte[] data = Base64.getDecoder().decode(encode);
-        if(data.length == 16) {
-            ByteBuffer b = ByteBuffer.wrap(data);
-            byte[] nonce = new byte[12];
-            b.get(nonce);
-            int counter = b.getInt();
-            ChaCha20ParameterSpec newParam = new ChaCha20ParameterSpec(nonce, counter);
-
-            chaCha20.setParamSpec(newParam);
-
-            System.out.println(chaCha20.decryptBase64(cpt));
-        }
     }
 }

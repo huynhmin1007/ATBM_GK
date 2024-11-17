@@ -6,6 +6,7 @@ import ui.common.Dimensions;
 import ui.view.component.FileLoader;
 import ui.view.component.MaterialCombobox;
 import ui.view.component.MaterialLabel;
+import ui.view.component.SpinningLoading;
 import ui.view.custom.BaseActivity;
 import ui.view.fragment.symmetric.*;
 import utils.FileHelper;
@@ -39,6 +40,7 @@ public class SymmetricActivity extends BaseActivity {
     private SymmetricConcrete symmetricConcrete;
 
     private String currentOption = "Text";
+    private SpinningLoading loading;
 
     public SymmetricActivity() {
         setLayout(new BorderLayout());
@@ -160,7 +162,7 @@ public class SymmetricActivity extends BaseActivity {
 
     private void createInputFilePanel() {
         fileLoader = new FileLoader("File");
-        gbc.insets = Dimensions.DEFAULT_INSETS;
+        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, Dimensions.MARGIN_VERTICAL, 0);
         gbc.gridx = 0;
         gbc.gridy = 1;
         contentPane.add(fileLoader, gbc);

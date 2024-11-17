@@ -1,5 +1,6 @@
 package ui.view.component;
 
+import ui.common.Dimensions;
 import utils.FileHelper;
 
 import javax.swing.*;
@@ -23,7 +24,7 @@ public class FileLoader extends JPanel {
         setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, MARGIN_HORIZONTAL, 0, 0);
+        gbc.insets = new Insets(0, MARGIN_HORIZONTAL, 0, Dimensions.MARGIN_HORIZONTAL);
         gbc.anchor = GridBagConstraints.WEST;
 
         label = new MaterialLabel(labelName);

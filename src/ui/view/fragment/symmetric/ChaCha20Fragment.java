@@ -8,13 +8,11 @@ import ui.common.Dimensions;
 import ui.view.component.EditText;
 import ui.view.component.MaterialLabel;
 
-import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.swing.*;
 import java.awt.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Base64;
 
 public class ChaCha20Fragment extends SymmetricDecorator {
@@ -88,6 +86,11 @@ public class ChaCha20Fragment extends SymmetricDecorator {
     }
 
     @Override
+    public void setAlgorithm(Symmetric algorithm) {
+        this.algorithm = (ChaCha20) algorithm;
+    }
+
+    @Override
     public void display() {
         concrete.ivPanel.setVisible(false);
         GridBagConstraints constraints = new GridBagConstraints();
@@ -99,6 +102,21 @@ public class ChaCha20Fragment extends SymmetricDecorator {
         concrete.add(paramSpecPanel, constraints);
         concrete.setController(this);
         super.display();
+    }
+
+    @Override
+    public void configure() {
+        super.configure();
+        algorithm.setParamSpec(Base64.getDecoder().decode(paramSpecEdt.getText().getBytes()));
+        algorithm.setCounter(Integer.parseInt(counterEdt.getText()));
+    }
+
+    @Override
+    public void displayWithAttributes() {
+        super.displayWithAttributes();
+        counterEdt.setText(algorithm.getCounter() + "");
+        paramSpecEdt.setText(algorithm.getParamSpec());
+        nonceEdt.setText(algorithm.getNonce() + "");
     }
 
     @Override
@@ -117,13 +135,9 @@ public class ChaCha20Fragment extends SymmetricDecorator {
         parameterLabel.deleteNotify();
 
         algorithm.setCounter(Integer.parseInt(counterEdt.getText()));
-        ChaCha20ParameterSpec parameterSpec = algorithm.generateParamSpec();
+        algorithm.generateParamSpec();
 
-        ByteBuffer buffer = ByteBuffer.allocate(12 + 4);
-        buffer.put(parameterSpec.getNonce());
-        buffer.putInt(parameterSpec.getCounter());
-
-        paramSpecEdt.setText(Base64.getEncoder().encodeToString(buffer.array()));
+        paramSpecEdt.setText(algorithm.getParamSpec());
     }
 
     @Override

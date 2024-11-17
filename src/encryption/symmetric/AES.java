@@ -1,5 +1,6 @@
 package encryption.symmetric;
 
+import encryption.asymmetric.RSA;
 import encryption.common.Algorithm;
 import encryption.common.Mode;
 import encryption.common.Padding;
@@ -8,6 +9,7 @@ import utils.FileHelper;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -119,6 +121,51 @@ public class AES extends Symmetric {
     }
 
     @Override
+    public void saveConfigure(String des, RSA asymmetric, boolean append) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(des, append));
+             DataOutputStream out = new DataOutputStream(bos)) {
+            out.writeUTF(mode.name());
+            out.writeUTF(padding.name());
+
+            byte[] keyBytes = asymmetric.encrypt(key.getEncoded());
+            out.writeInt(keySize);
+            out.writeInt(keyBytes.length);
+            out.write(keyBytes);
+
+            if (getIVSize(mode.name()) != -1) {
+                byte[] ivBytes = asymmetric.encrypt(iv.getIV());
+                out.writeInt(ivBytes.length);
+                out.write(ivBytes);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public InputStream loadConfigure(InputStream is, RSA asymmetric) throws IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        BufferedInputStream bis = new BufferedInputStream(is);
+        DataInputStream in = new DataInputStream(bis);
+        try {
+            mode = Mode.valueOf(in.readUTF());
+            padding = Padding.valueOf(in.readUTF());
+            keySize = in.readInt();
+            int keyLength = in.readInt();
+            byte[] keyDecrypt = asymmetric.decrypt(in.readNBytes(keyLength));
+            key = new SecretKeySpec(keyDecrypt, algorithm.name());
+
+            if (getIVSize(mode.name()) != -1) {
+                int ivLength = in.readInt();
+                byte[] ivDecrypt = asymmetric.decrypt(in.readNBytes(ivLength));
+                iv = new IvParameterSpec(ivDecrypt);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bis;
+    }
+
+    @Override
     public boolean validateKeySize(int keySize) {
         return Arrays.stream(getKeySizeSupported()).anyMatch(v -> v == keySize);
     }
@@ -174,14 +221,15 @@ public class AES extends Symmetric {
             while ((bytesRead = in.read(bufferBytes)) != -1) {
                 out.write(bufferBytes, 0, bytesRead);
             }
+            return true;
         } catch (IOException e) {
             desFile.delete();
             return false;
         }
-        return true;
     }
 
-    public void decryptFile(InputStream is, String des) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
+    @Override
+    public boolean decryptFile(InputStream is, String des) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
         File desFile = new File(des);
 
         Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
@@ -194,9 +242,11 @@ public class AES extends Symmetric {
             while ((bytesRead = in.read(bufferBytes)) != -1) {
                 out.write(bufferBytes, 0, bytesRead);
             }
+            return true;
         } catch (IOException e) {
             desFile.delete();
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            return false;
         }
     }
 

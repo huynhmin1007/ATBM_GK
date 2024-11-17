@@ -12,6 +12,8 @@ public class MaterialLabel extends JPanel {
 
     private GridBagConstraints gbc;
 
+    private boolean showNotify;
+
     public MaterialLabel(String text) {
         info = new JLabel(text);
         info.setPreferredSize(new Dimension(Dimensions.LABEL_WIDTH, info.getPreferredSize().height));
@@ -29,6 +31,11 @@ public class MaterialLabel extends JPanel {
     }
 
     public void setNotify(String text) {
+        if (showNotify) {
+            return;
+        }
+
+        showNotify = true;
         remove(notify);
         gbc.insets = new Insets(10, 0, 10, 0);
         gbc.gridy = 1;
@@ -38,6 +45,11 @@ public class MaterialLabel extends JPanel {
     }
 
     public void setNotify(String text, Insets insets) {
+        if (showNotify) {
+            return;
+        }
+
+        showNotify = true;
         remove(notify);
         gbc.insets = insets;
         gbc.gridy = 1;
@@ -47,6 +59,9 @@ public class MaterialLabel extends JPanel {
     }
 
     public void deleteNotify() {
-        remove(notify);
+        if (showNotify) {
+            showNotify = false;
+            remove(notify);
+        }
     }
 }

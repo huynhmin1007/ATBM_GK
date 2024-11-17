@@ -20,7 +20,17 @@ public class AESFragment extends SymmetricDecorator {
     }
 
     @Override
+    public void setAlgorithm(Symmetric algorithm) {
+        this.algorithm = (AES) algorithm;
+    }
+
+    @Override
     public void close() {
 
+    }
+
+    @Override
+    public void display() {
+        super.display();
     }
 }

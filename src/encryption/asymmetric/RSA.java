@@ -1,29 +1,59 @@
 package encryption.asymmetric;
 
-import encryption.symmetric.AES;
-import utils.FileHelper;
+import encryption.common.Algorithm;
+import encryption.symmetric.Symmetric;
+import encryption.symmetric.SymmetricFactory;
 
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 
 public class RSA {
-
-    public static final Integer KEY_SIZE = 2048;
-    public static final String TRANSFORMATION = "RSA/ECB/PKCS1Padding";
 
     private KeyPair keyPair;
 
     private PublicKey publicKey;
     private PrivateKey privateKey;
 
+    private Algorithm algorithm;
+    private List<String> algorithmsSupported;
+    private int keySize;
+    private String mode;
+    private String padding;
+
+    public RSA() {
+        algorithm = Algorithm.RSA;
+        initAlgorithmSupported();
+    }
+
+    private void initAlgorithmSupported() {
+        algorithmsSupported = new ArrayList<>();
+
+        algorithmsSupported.add("RSA/ECB/PKCS1Padding");
+        algorithmsSupported.add("RSA/ECB/OAEPPadding");
+        algorithmsSupported.add("RSA/ECB/OAEPWithMD5AndMGF1Padding");
+        algorithmsSupported.add("RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
+        algorithmsSupported.add("RSA/ECB/OAEPWithSHA-224AndMGF1Padding");
+        algorithmsSupported.add("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        algorithmsSupported.add("RSA/ECB/OAEPWithSHA-384AndMGF1Padding");
+        algorithmsSupported.add("RSA/ECB/OAEPWithSHA-512AndMGF1Padding");
+        algorithmsSupported.add("RSA/ECB/OAEPWithSHA-512/224AndMGF1Padding");
+        algorithmsSupported.add("RSA/ECB/OAEPWithSHA-512/256AndMGF1Padding");
+    }
+
     public void generateKey() throws NoSuchAlgorithmException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(KEY_SIZE);
+        generator.initialize(keySize);
         keyPair = generator.generateKeyPair();
 
         publicKey = keyPair.getPublic();
@@ -36,16 +66,25 @@ public class RSA {
         privateKey = keyPair.getPrivate();
     }
 
-    public byte[] encrypt(byte[] plainText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+    private Cipher initCipher(int opmode) throws InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException {
+        Cipher cipher = Cipher.getInstance(algorithm.name() + "/" + mode + "/" + padding);
 
+        if (opmode == Cipher.ENCRYPT_MODE) {
+            cipher.init(opmode, publicKey);
+        } else if (opmode == Cipher.DECRYPT_MODE) {
+            cipher.init(opmode, privateKey);
+        }
+
+        return cipher;
+    }
+
+    public byte[] encrypt(byte[] plainText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
         return cipher.doFinal(plainText);
     }
 
     public byte[] encrypt(String plainText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
         byte[] in = plainText.getBytes(StandardCharsets.UTF_8);
 
         return cipher.doFinal(in);
@@ -56,8 +95,7 @@ public class RSA {
     }
 
     public byte[] decrypt(byte[] cipherText) throws IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
-        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
 
         return cipher.doFinal(cipherText);
     }
@@ -68,135 +106,94 @@ public class RSA {
         return new String(decrypt(decryptBytes));
     }
 
-    public boolean encryptFile(String src, String des) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, FileNotFoundException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        AES aes = new AES();
-        SecretKey key = aes.generateKey();
-        IvParameterSpec iv = aes.generateIV();
-
-        saveKeyAndIV(key, iv, des);
-
-        return aes.encryptFile(src, des, true);
-    }
-
-    public boolean decryptFile(String src, String des) throws FileNotFoundException {
-        File srcFile = FileHelper.findFile(src);
-        AES aes = new AES();
-
-        try (InputStream in = new BufferedInputStream(new FileInputStream(srcFile));
-             DataInputStream dataInputStream = new DataInputStream(in)) {
-            int keyLength = dataInputStream.readInt();
-            int ivLength = dataInputStream.readInt();
-
-            byte[] keyDecrypt = decrypt(dataInputStream.readNBytes(keyLength));
-            byte[] ivDecrypt = decrypt(dataInputStream.readNBytes(ivLength));
-
-            SecretKey key = new SecretKeySpec(keyDecrypt, "AES");
-            IvParameterSpec iv = new IvParameterSpec(ivDecrypt);
-
-            aes.loadKeyAndIV(key, iv);
-
-            return aes.decryptFile(src, des);
-        } catch (IOException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException |
-                 NoSuchAlgorithmException | InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void saveKeyAndIV(SecretKey key, IvParameterSpec iv, String des) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    public boolean encryptFile(String src, String des, Symmetric symmetric) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, FileNotFoundException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(des));
              DataOutputStream out = new DataOutputStream(bos)) {
-            byte[] keyBytes = encrypt(key.getEncoded());
-            byte[] ivBytes = encrypt(iv.getIV());
-
-            out.writeInt(keyBytes.length);
-            out.writeInt(ivBytes.length);
-
-            out.write(keyBytes);
-            out.write(ivBytes);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            out.writeUTF(symmetric.getAlgorithm());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            return false;
+        }
+
+        symmetric.saveConfigure(des, this, true);
+        return symmetric.encryptFile(src, des, true);
+    }
+
+    public Symmetric decryptFile(String src, String des) throws FileNotFoundException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
+        try (BufferedInputStream is = new BufferedInputStream(new FileInputStream(src));
+             DataInputStream in = new DataInputStream(is)) {
+            String algorithmName = in.readUTF();
+            Symmetric symmetric = SymmetricFactory.getSymmetric(Algorithm.valueOf(algorithmName));
+            return symmetric.decryptFile(symmetric.loadConfigure(is, this), des) ? symmetric : null;
+        } catch (IOException e) {
+            return null;
         }
     }
 
-    public void savePrivateKey(PrivateKey privateKey, String des) {
-        try (FileOutputStream fos = new FileOutputStream(des);
-             ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(fos))) {
-            out.writeObject(privateKey);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public int[] getKeySizeSupported() {
+        return new int[]{1024, 2048, 3072, 4096};
     }
 
-    public void savePublicKey(PublicKey publicKey, String des) {
-        try (FileOutputStream fos = new FileOutputStream(des);
-             ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(fos))) {
-            out.writeObject(publicKey);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public boolean validateKeySize(int keySize) {
+        return Arrays.stream(getKeySizeSupported()).anyMatch(v -> v == keySize);
     }
 
-    public void saveKeyPair(KeyPair keyPair, String des) {
-        try (FileOutputStream fos = new FileOutputStream(des);
-             ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(fos))) {
-            out.writeObject(keyPair);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public List<String> getAlgorithmsSupported() {
+        return algorithmsSupported;
     }
 
-    public void loadKeyPair(String src) throws FileNotFoundException {
-        File file = FileHelper.findFile(src);
-
-        try (FileInputStream fis = new FileInputStream(file);
-             ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(fis))) {
-            loadKey((KeyPair) in.readObject());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public PrivateKey getPrivateKey() {
+        return privateKey;
     }
 
-    public void loadPrivateKey(String src) throws FileNotFoundException {
-        File file = FileHelper.findFile(src);
-
-        try (FileInputStream fis = new FileInputStream(file);
-             ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(fis))) {
-            this.privateKey = (PrivateKey) in.readObject();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public void setPrivateKey(PrivateKey privateKey) {
+        this.privateKey = privateKey;
     }
 
-    public void loadPublicKey(String src) throws FileNotFoundException {
-        File file = FileHelper.findFile(src);
-
-        try (FileInputStream fis = new FileInputStream(file);
-             ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(fis))) {
-            this.publicKey = (PublicKey) in.readObject();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public PublicKey getPublicKey() {
+        return publicKey;
     }
 
     public void setPublicKey(PublicKey publicKey) {
         this.publicKey = publicKey;
     }
 
-    public void setPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public void setPadding(String padding) {
+        this.padding = padding;
+    }
+
+    public int getKeySize() {
+        return keySize;
+    }
+
+    public void setKeySize(int keySize) {
+        this.keySize = keySize;
+    }
+
+    public String getAlgorithm() {
+        return algorithm.name();
+    }
+
+    public PrivateKey decodePrivateKey(String base64Key) throws Exception {
+        byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm.name());
+        return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+    }
+
+    public PublicKey decodePublicKey(String base64Key) throws Exception {
+        byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm.name());
+        return keyFactory.generatePublic(new X509EncodedKeySpec(keyBytes));
+    }
+
+    public void setPrivateKey(String privateKey) throws Exception {
+        this.privateKey = decodePrivateKey(privateKey);
+    }
+
+    public void setPublicKey(String publicKey) throws Exception {
+        this.publicKey = decodePublicKey(publicKey);
     }
 }

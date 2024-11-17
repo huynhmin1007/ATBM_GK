@@ -1,10 +1,11 @@
-package ui.view.fragment.symmetric;
+package ui.view.fragment.asymmetric;
+
+import encryption.symmetric.Symmetric;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-public interface SymmetricFragment {
-
+public interface ASymmetricFragment {
     void handleModeChangeListener();
 
     void handlePaddingChangeListener();
@@ -20,15 +21,16 @@ public interface SymmetricFragment {
     void generateKey();
 
     void display();
-    void displayWithAttributes();
 
     void close();
 
-    void configure();
+    void configureEncrypt();
+    void configureDecrypt();
 
     int getKeySize();
 
-    boolean validateInput();
+    boolean validateInputEncrypt();
+    boolean validateInputDecrypt();
 
     String[] getMode();
 
@@ -38,7 +40,7 @@ public interface SymmetricFragment {
 
     String decryptBase64(String cipherText);
 
-    boolean encryptFile(String src, String des);
+    boolean encryptFile(String src, String des, Symmetric symmetric);
 
-    boolean decryptFile(String src, String des);
+    Symmetric decryptFile(String src, String des);
 }

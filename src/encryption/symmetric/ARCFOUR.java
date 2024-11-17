@@ -1,5 +1,6 @@
 package encryption.symmetric;
 
+import encryption.asymmetric.RSA;
 import encryption.common.Algorithm;
 import encryption.common.Mode;
 import encryption.common.Padding;
@@ -8,13 +9,13 @@ import utils.FileHelper;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class ARCFOUR extends Symmetric {
 
@@ -80,6 +81,40 @@ public class ARCFOUR extends Symmetric {
     }
 
     @Override
+    public void saveConfigure(String des, RSA asymmetric, boolean append) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(des, append));
+             DataOutputStream out = new DataOutputStream(bos)) {
+            out.writeUTF(mode.name());
+            out.writeUTF(padding.name());
+
+            byte[] keyBytes = asymmetric.encrypt(key.getEncoded());
+            out.writeInt(keySize);
+            out.writeInt(keyBytes.length);
+            out.write(keyBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public InputStream loadConfigure(InputStream is, RSA asymmetric) throws IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        BufferedInputStream bis = new BufferedInputStream(is);
+        DataInputStream in = new DataInputStream(bis);
+        try {
+            mode = Mode.valueOf(in.readUTF());
+            padding = Padding.valueOf(in.readUTF());
+            keySize = in.readInt();
+
+            int keyLength = in.readInt();
+            byte[] keyDecrypt = asymmetric.decrypt(in.readNBytes(keyLength));
+            key = new SecretKeySpec(keyDecrypt, algorithm.name());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bis;
+    }
+
+    @Override
     public boolean validateKeySize(int keySize) {
         return keySize >= 40 && keySize <= 1024;
     }
@@ -137,7 +172,8 @@ public class ARCFOUR extends Symmetric {
         return true;
     }
 
-    public void decryptFile(InputStream is, String des) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
+    @Override
+    public boolean decryptFile(InputStream is, String des) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
         File desFile = new File(des);
 
         Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
@@ -150,9 +186,11 @@ public class ARCFOUR extends Symmetric {
             while ((bytesRead = in.read(bufferBytes)) != -1) {
                 out.write(bufferBytes, 0, bytesRead);
             }
+
+            return true;
         } catch (IOException e) {
             desFile.delete();
-            throw new RuntimeException(e);
+            return false;
         }
     }
 
@@ -165,19 +203,5 @@ public class ARCFOUR extends Symmetric {
     @Override
     public int getIVSize(String mode) {
         return -1;
-    }
-
-    public static void main(String[] args) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-        List<String> algorithms = Arrays.stream(Security.getProviders())
-                .flatMap(provider -> provider.getServices().stream())
-                .filter(service -> "Cipher".equals(service.getType()))
-                .map(Provider.Service::getAlgorithm)
-                .collect(Collectors.toList());
-
-        algorithms.forEach(v -> {
-            if (v.contains("ARCFOUR")) {
-                System.out.println(v);
-            }
-        });
     }
 }

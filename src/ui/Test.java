@@ -1,105 +1,64 @@
 package ui;
 
-import javax.xml.crypto.Data;
-import java.util.function.Function;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-interface DataProcessor {
-    String encrypt(String data);
-    int getSize(String data);
-}
+public class Test extends JPanel implements ActionListener {
+    private final Timer timer;
+    private int angle = 0;
 
-
-class ConcreteProcessor implements DataProcessor {
-    private DataProcessor controller; // Tham chiếu đến controller
-
-    // Phương thức để gán Controller
-    public void setController(DataProcessor controller) {
-        this.controller = controller;
-    }
-
-    // Phương thức tổng quát để lấy giá trị
-    private <T> T resolveValue(Function<DataProcessor, T> function) {
-        // Kiểm tra controller và lấy giá trị theo function truyền vào
-        return function.apply(controller != null ? controller : this);
+    public Test() {
+        // Thiết lập Timer để xoay hình liên tục
+        timer = new Timer(30, this); // 30ms mỗi bước
+        timer.start();
     }
 
     @Override
-    public String encrypt(String data) {
-        System.out.println("ConcreteProcessor: Encrypting data...");
-        int size = resolveValue(dp -> dp.getSize(data)); // Lấy size từ controller hoặc ConcreteProcessor
-        System.out.println("ConcreteProcessor: Size used for encryption: " + size);
-        return "Encrypted(" + data + ", size=" + size + ")";
-    }
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
 
-    public String decrypt(String data) {
-        System.out.println("ConcreteProcessor: Decrypting data...");
-        int size = resolveValue(dp -> dp.getSize(data)); // Lấy size từ controller hoặc ConcreteProcessor
-        System.out.println("ConcreteProcessor: Size used for decryption: " + size);
-        return "Decrypted(" + data + ", size=" + size + ")";
-    }
+        // Khử răng cưa
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-    @Override
-    public int getSize(String data) {
-        System.out.println("ConcreteProcessor: Calculating size...");
-        return data.length(); // Logic mặc định
-    }
+        // Vẽ nền (tùy chọn)
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, getWidth(), getHeight());
 
-    public int getOtherValue(String data) {
-        System.out.println("ConcreteProcessor: Calculating other value...");
-        return data.length() * 2; // Một ví dụ khác để trả về giá trị khác
-    }
-}
+        // Tính toán tâm và kích thước vòng tròn
+        int width = getWidth();
+        int height = getHeight();
+        int size = Math.min(width, height) / 4; // Kích thước vòng tròn
+        int x = (width - size) / 2;
+        int y = (height - size) / 2;
 
+        // Vẽ vòng tròn xoay
+        g2d.setColor(Color.GRAY);
+        g2d.setStroke(new BasicStroke(5));
+        g2d.drawArc(x, y, size, size, angle, 270); // Vòng cung 270 độ
 
-abstract class ControllerDecorator implements DataProcessor {
-    protected final ConcreteProcessor concrete; // Tham chiếu đến Concrete
-
-    public ControllerDecorator(ConcreteProcessor concrete) {
-        this.concrete = concrete;
+        // Xoay góc
+        angle += 5;
+        angle %= 360;
     }
 
     @Override
-    public String encrypt(String data) {
-        return concrete.encrypt(data);
+    public void actionPerformed(ActionEvent e) {
+        repaint(); // Cập nhật giao diện
     }
 
-    @Override
-    public int getSize(String data) {
-        // Mặc định gọi getSize của Concrete
-        return concrete.getSize(data);
-    }
-}
-
-class CustomController extends ControllerDecorator {
-    public CustomController(ConcreteProcessor concrete) {
-        super(concrete);
-    }
-
-    @Override
-    public int getSize(String data) {
-        // Lấy kết quả gốc từ Concrete
-        int originalSize = super.getSize(data);
-        System.out.println("CustomController: Original size from Concrete: " + originalSize);
-
-        // Thực hiện logic tùy chỉnh
-        int modifiedSize = originalSize * 2;
-        System.out.println("CustomController: Modified size: " + modifiedSize);
-
-        return modifiedSize;
-    }
-}
-
-public class Test {
     public static void main(String[] args) {
-        // Tạo ConcreteProcessor
-        ConcreteProcessor concrete = new ConcreteProcessor();
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Spinning Loading Example");
+            Test loadingPanel = new Test();
 
-        // Tạo ControllerDecorator
-        CustomController customController = new CustomController(concrete);
-        concrete.setController(customController);
-        // Gọi encrypt (sẽ gọi getSize của CustomController)
-        String data = "HelloWorld";
-        String encryptedData = customController.encrypt(data); // Sử dụng CustomController
-        System.out.println("Final Encrypted Data: " + encryptedData);
+            frame.add(loadingPanel);
+            frame.setSize(400, 400);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
     }
 }

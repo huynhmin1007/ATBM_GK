@@ -43,6 +43,11 @@ public class BlowfishFragment extends SymmetricDecorator {
     }
 
     @Override
+    public void setAlgorithm(Symmetric algorithm) {
+        this.algorithm = (Blowfish) algorithm;
+    }
+
+    @Override
     public void display() {
         concrete.keySizePanel.setVisible(false);
         concrete.setController(this);
@@ -57,6 +62,12 @@ public class BlowfishFragment extends SymmetricDecorator {
         concrete.keyPanel.add(keySizePanel, constraints);
 
         super.display();
+    }
+
+    @Override
+    public void displayWithAttributes() {
+        super.displayWithAttributes();
+        keySizeEdt.setText(getKeySize() + "");
     }
 
     @Override

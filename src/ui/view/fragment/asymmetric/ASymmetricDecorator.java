@@ -1,5 +1,6 @@
-package ui.view.fragment.symmetric;
+package ui.view.fragment.asymmetric;
 
+import encryption.asymmetric.RSA;
 import encryption.symmetric.Symmetric;
 import ui.common.Dimensions;
 
@@ -8,14 +9,14 @@ import java.awt.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-public abstract class SymmetricDecorator extends JPanel implements SymmetricFragment {
+public abstract class ASymmetricDecorator extends JPanel implements ASymmetricFragment {
 
-    protected SymmetricConcrete concrete;
+    protected ASymmetricConcrete concrete;
     protected GridBagConstraints gbc;
 
     protected int x = 0, y = 0;
 
-    protected SymmetricDecorator(SymmetricConcrete concrete) {
+    protected ASymmetricDecorator(ASymmetricConcrete concrete) {
         this.concrete = concrete;
         setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
@@ -38,8 +39,7 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
         concrete.display();
     }
 
-    public abstract Symmetric getAlgorithm();
-    public abstract void setAlgorithm(Symmetric algorithm);
+    public abstract RSA getAlgorithm();
 
     @Override
     public String[] getMode() {
@@ -82,29 +82,18 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
     }
 
     @Override
-    public void configure() {
-        concrete.configure();
-        concrete.algorithm.setKeySize(getKeySize());
-    }
-
-    @Override
-    public boolean decryptFile(String src, String des) {
+    public Symmetric decryptFile(String src, String des) {
         return concrete.decryptFile(src, des);
     }
 
     @Override
-    public boolean encryptFile(String src, String des) {
-        return concrete.encryptFile(src, des);
+    public boolean encryptFile(String src, String des, Symmetric symmetric) {
+        return concrete.encryptFile(src, des, symmetric);
     }
 
     @Override
     public int getKeySize() {
         return concrete.getKeySize();
-    }
-
-    @Override
-    public boolean validateInput() {
-        return concrete.validateInput();
     }
 
     @Override
@@ -118,7 +107,22 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
     }
 
     @Override
-    public void displayWithAttributes() {
-        concrete.displayWithAttributes();
+    public boolean validateInputEncrypt() {
+        return concrete.validateInputEncrypt();
+    }
+
+    @Override
+    public boolean validateInputDecrypt() {
+        return concrete.validateInputDecrypt();
+    }
+
+    @Override
+    public void configureDecrypt() {
+        concrete.configureDecrypt();
+    }
+
+    @Override
+    public void configureEncrypt() {
+        concrete.configureEncrypt();
     }
 }

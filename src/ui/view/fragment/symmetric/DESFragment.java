@@ -20,6 +20,11 @@ public class DESFragment extends SymmetricDecorator {
     }
 
     @Override
+    public void setAlgorithm(Symmetric algorithm) {
+        this.algorithm = (DES) algorithm;
+    }
+
+    @Override
     public void close() {
 
     }
