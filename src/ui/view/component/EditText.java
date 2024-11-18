@@ -7,7 +7,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.PlainDocument;
 import java.awt.*;
-import java.awt.dnd.DropTarget;
 
 public class EditText extends JPanel {
 
@@ -19,8 +18,8 @@ public class EditText extends JPanel {
 
     public EditText() {
         textField = new JTextField();
-        errorLabel = new JLabel();
-        infoLabel = new JLabel();
+        errorLabel = new JLabel("");
+        infoLabel = new JLabel("");
 
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -56,7 +55,7 @@ public class EditText extends JPanel {
         if (!showError) {
             errorLabel.setText(error);
             errorLabel.setVisible(true);
-            setPreferredSize(new Dimension(getPreferredSize().width, getPreferredSize().height + errorLabel.getPreferredSize().height));
+//            setPreferredSize(new Dimension(getPreferredSize().width, getPreferredSize().height + errorLabel.getPreferredSize().height));
             refreshUI();
             showError = true;
         }
@@ -70,7 +69,6 @@ public class EditText extends JPanel {
     public void hideError() {
         if (showError) {
             showError = false;
-            remove(errorLabel);
             errorLabel.setVisible(false);
             refreshUI();
         }

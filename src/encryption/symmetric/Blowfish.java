@@ -168,7 +168,7 @@ public class Blowfish extends Symmetric {
         String transformation = StringHelper.generateString("/", algorithm, mode, padding);
         Cipher cipher = Cipher.getInstance(transformation);
 
-        if (iv == null) {
+        if (getIVSize(mode.name()) == -1) {
             cipher.init(opmode, key);
         } else {
             cipher.init(opmode, key, iv);

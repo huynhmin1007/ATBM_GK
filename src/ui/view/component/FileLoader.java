@@ -15,42 +15,16 @@ import java.util.List;
 
 public class FileLoader extends JPanel {
 
-    private MaterialLabel label;
-    private EditText fileEdt;
+    public InputField inputField;
     public JButton browserBtn;
 
-    private GridBagConstraints gbc;
-
-    public static final int MARGIN_HORIZONTAL = 10;
-
-    private Component container;
-
     public FileLoader(String labelName) {
-        setLayout(new GridBagLayout());
-        gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, MARGIN_HORIZONTAL, 0, Dimensions.MARGIN_HORIZONTAL);
-        gbc.anchor = GridBagConstraints.WEST;
 
-        label = new MaterialLabel(labelName);
-        label.setNotify("");
-        add(label, gbc);
-
-        fileEdt = new EditText();
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        add(fileEdt, gbc);
-
+        inputField = new InputField(labelName);
+        inputField.info("Drag and drop a file here");
         browserBtn = new JButton("Browse");
-        gbc.gridx = 2;
-        gbc.weightx = 0.0;
-        gbc.insets = new Insets(0, MARGIN_HORIZONTAL, 25, MARGIN_HORIZONTAL);
-        add(browserBtn, gbc);
 
-        container = this;
-        fileEdt.setInfo("Kéo và thả File vào đây");
-
-        new DropTarget(fileEdt.textField, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
+        new DropTarget(inputField.input, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
             @Override
             public void drop(DropTargetDropEvent event) {
                 try {
@@ -64,9 +38,9 @@ public class FileLoader extends JPanel {
                             File droppedFile = fileList.get(0);
 
                             if (droppedFile.isFile()) {
-                                fileEdt.setText(droppedFile.getAbsolutePath());
+                                inputField.setValue(droppedFile.getAbsolutePath());
                             } else {
-                                JOptionPane.showMessageDialog(getRootPane(), "Vui lòng nhập vào File, không phải Folder.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(getRootPane(), "Please drop a valid file.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
                             }
                         }
                     }
@@ -75,14 +49,20 @@ public class FileLoader extends JPanel {
                 }
             }
         });
-    }
 
-    public void setLabel(String text) {
-        label.info.setText(text);
-    }
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = Dimensions.DEFAULT_INSETS;
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        inputField.add(browserBtn, gbc);
 
-    public JLabel getLabel() {
-        return label.info;
+        gbc.weightx = 1.0;
+        gbc.gridx = 0;
+        gbc.insets = Dimensions.ZERO_INSETS;
+        add(inputField, gbc);
     }
 
     /**
@@ -94,8 +74,8 @@ public class FileLoader extends JPanel {
     public void browseSaveFile(String[] extensions) {
         FileHelper fileHelper = new FileHelper();
 
-        String filePath = fileHelper.showSaveFile(container, fileEdt.getText(), extensions);
-        fileEdt.setText(filePath != null ? filePath : fileEdt.getText());
+        String filePath = fileHelper.showSaveFile(getRootPane(), inputField.getValue(), extensions);
+        inputField.setValue(filePath != null ? filePath : inputField.getValue());
         hideError();
     }
 
@@ -107,34 +87,22 @@ public class FileLoader extends JPanel {
      */
     public void browseFile(String[] extensions) {
         FileHelper fileHelper = new FileHelper();
-        File file = fileHelper.showOpenFile(container, fileEdt.getText(), extensions);
-        fileEdt.setText(file != null ? file.getAbsolutePath() : fileEdt.getText());
+        File file = fileHelper.showOpenFile(getRootPane(), inputField.getValue(), extensions);
+        inputField.setValue(file != null ? file.getAbsolutePath() : inputField.getValue());
         hideError();
     }
 
-    public void setContainerPopup(Component container) {
-        this.container = container;
-    }
-
     public String getPath() {
-        return fileEdt.getText();
+        return inputField.getValue();
     }
 
-    public void error(String error) {
-        fileEdt.error(error);
-        gbc.gridx = 2;
-        gbc.weightx = 0.0;
-        gbc.insets = new Insets(0, MARGIN_HORIZONTAL, 45, 0);
-        add(browserBtn, gbc);
+    public void error() {
+        inputField.error();
+        JOptionPane.showMessageDialog(getRootPane(), "Please enter a File.",
+                "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     public void hideError() {
-        fileEdt.hideError();
-
-        gbc.gridx = 2;
-        gbc.weightx = 0.0;
-        gbc.insets = new Insets(0, MARGIN_HORIZONTAL, 25, 0);
-        remove(browserBtn);
-        add(browserBtn, gbc);
+        inputField.hideError();
     }
 }

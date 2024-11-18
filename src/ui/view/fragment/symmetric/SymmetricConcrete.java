@@ -6,9 +6,9 @@ import encryption.common.Padding;
 import encryption.symmetric.Symmetric;
 import encryption.symmetric.SymmetricFactory;
 import ui.common.Dimensions;
-import ui.view.component.EditText;
+import ui.view.component.ComboboxInputField;
+import ui.view.component.InputField;
 import ui.view.component.MaterialCombobox;
-import ui.view.component.MaterialLabel;
 import utils.FileHelper;
 
 import javax.crypto.BadPaddingException;
@@ -40,13 +40,9 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
     public GridBagConstraints gbc;
     public MaterialCombobox<String> modeCbb, paddingCbb;
-    public MaterialCombobox<Integer> keySizeCbb;
-    public EditText keyEdt;
-    public EditText ivSizeEdt;
-    public EditText ivEdt;
     public JButton loadKey, genKey, saveKey;
-    public JPanel keySizePanel, keyPanel, ivPanel;
-    public MaterialLabel ivLabel, keyLabel;
+    public ComboboxInputField keySizeInput;
+    public InputField keyInput, ivSizeInput, ivInput;
 
     public String oldPath;
 
@@ -58,7 +54,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         setLayout(new GridBagLayout());
 
         gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.fill = GridBagConstraints.BOTH;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = Dimensions.ZERO_INSETS;
         gbc.weightx = 1.0;
@@ -96,7 +92,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     }
 
     private void addDragAndDrop() {
-        new DropTarget(keyEdt.textField, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
+        new DropTarget(keyInput.input, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
             @Override
             public void drop(DropTargetDropEvent event) {
                 try {
@@ -112,7 +108,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
                             if (droppedFile.isFile()) {
                                 loadKey(droppedFile);
                             } else {
-                                JOptionPane.showMessageDialog(getRootPane(), "Vui lòng nhập vào File, không phải Folder.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(getRootPane(), "Please drop a valid file.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
                             }
                         }
                     }
@@ -124,86 +120,25 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     }
 
     private void createKeyGUI() {
-        MaterialLabel keySizeLabel = new MaterialLabel("Key Size:");
-        keyLabel = new MaterialLabel("Key:");
-        keySizeCbb = new MaterialCombobox<>();
-        keyEdt = new EditText();
-        keyLabel.setNotify("");
-        keyEdt.setInfo("Kéo và thả File vào đây để load Key");
-        keyEdt.setPreferredSize(new Dimension(140, keyEdt.getPreferredSize().height));
-
-        keyPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = Dimensions.DEFAULT_INSETS;
-
-        keySizePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Dimensions.MARGIN_HORIZONTAL, Dimensions.MARGIN_VERTICAL));
-        keySizeLabel.setPreferredSize(new Dimension(keySizeLabel.getPreferredSize().width + Dimensions.MARGIN_HORIZONTAL, keySizeLabel.getPreferredSize().height));
-
-        keySizePanel.add(keySizeLabel);
-        keySizePanel.add(keySizeCbb);
-
-        constraints.gridx = 0;
-        constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
-        constraints.insets = Dimensions.ZERO_INSETS;
-        keyPanel.add(keySizePanel, constraints);
-
-        constraints.gridwidth = 1;
-        constraints.insets = Dimensions.DEFAULT_INSETS;
-        constraints.gridy = 1;
-        constraints.weightx = 0.0;
-        keyPanel.add(keyLabel, constraints);
-
-        constraints.gridx = 1;
-        constraints.weightx = 1.0;
-        keyPanel.add(keyEdt, constraints);
-
-        gbc.gridx = 0;
+        keySizeInput = new ComboboxInputField("Key Size:");
         gbc.gridy = 0;
-        add(keyPanel, gbc);
+        add(keySizeInput, gbc);
+
+        keyInput = new InputField("Key:");
+        keyInput.info("Drag and drop a file here to load the key.");
+        gbc.gridy = 1;
+        add(keyInput, gbc);
     }
 
     private void createIVGUI() {
-        MaterialLabel ivSizeLabel = new MaterialLabel("IV Size:");
-        ivLabel = new MaterialLabel("IV:");
-        ivSizeEdt = new EditText();
-        ivSizeEdt.setPreferredSize(new Dimension(140, ivSizeEdt.getPreferredSize().height));
-        ivEdt = new EditText();
-        ivEdt.setPreferredSize(new Dimension(140, keyEdt.getPreferredSize().height));
+        ivSizeInput = new InputField("IV Size:");
+        ivSizeInput.setInput(ivSizeInput.input, 0);
+        gbc.gridy = 2;
+        add(ivSizeInput, gbc);
 
-        ivPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = Dimensions.DEFAULT_INSETS;
-
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.weightx = 0.0;
-        ivPanel.add(ivSizeLabel, constraints);
-
-        constraints.gridx = 1;
-        ivPanel.add(ivSizeEdt, constraints);
-
-        constraints.gridx = 2;
-        constraints.weightx = 1.0;
-        ivPanel.add(new JPanel(), constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        constraints.weightx = 0.0;
-        ivPanel.add(ivLabel, constraints);
-
-        constraints.gridx = 1;
-        constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
-        ivPanel.add(ivEdt, constraints);
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        add(ivPanel, gbc);
+        ivInput = new InputField("IV:");
+        gbc.gridy = 3;
+        add(ivInput, gbc);
     }
 
     private void createButtonGroup() {
@@ -216,7 +151,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
         btnPanel.add(loadKey);
         btnPanel.add(saveKey);
 
-        gbc.gridy = 2;
+        gbc.gridy = 4;
         add(btnPanel, gbc);
     }
 
@@ -225,36 +160,25 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
     }
 
     public boolean validateKeyAndIV() {
-        String key = keyEdt.getText().trim();
-        int ivSize = algorithm.getIVSize(mode);
-        String iv = ivEdt.getText().trim();
+        int count = 0;
 
-        if (!key.isEmpty()) {
-            keyEdt.hideError();
-            keyLabel.deleteNotify();
-
-            if (ivSize != -1 && iv.isEmpty()) {
-                ivEdt.error("Vui lòng nhập IV");
-                ivLabel.setNotify("");
-                return false;
-            }
-
-            ivEdt.hideError();
-            ivLabel.deleteNotify();
-            return true;
+        if (keyInput.getValue().isEmpty()) {
+            keyInput.error();
+        } else {
+            keyInput.hideError();
+            count++;
         }
 
-        if (key.isEmpty()) {
-            keyEdt.error("Vui lòng nhập khóa");
-            keyLabel.setNotify("");
+        if (algorithm.getIVSize(mode) != -1) {
+            if (ivInput.getValue().isEmpty())
+                ivInput.error();
+            else count++;
+        } else {
+            ivInput.hideError();
+            count++;
         }
 
-        if (ivSize != -1 && iv.isEmpty()) {
-            ivEdt.error("Vui lòng nhập IV");
-            ivLabel.setNotify("");
-        }
-
-        return false;
+        return count == 2;
     }
 
     @Override
@@ -271,19 +195,18 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
         int[] keySize = algorithm.getKeySizeSupported();
         int ivSize = algorithm.getIVSize(mode);
-        setKeySize(keySize);
+        keySizeInput.setItems(Arrays.stream(keySize).mapToObj(String::valueOf).toArray(String[]::new));
 
         if (ivSize != -1) {
-            ivSizeEdt.setText(ivSize + "");
-            ivSizeEdt.setEnabled(false);
-            ivEdt.setEnabled(true);
+            ivSizeInput.setValue(ivSize + "");
+            ivInput.setEnabled(true);
         } else {
-            if (ivEdt.getText().trim().isEmpty()) {
-                ivSizeEdt.setText("");
+            if (ivInput.getValue().trim().isEmpty()) {
+                ivSizeInput.setValue("");
             }
-            ivSizeEdt.setEnabled(false);
-            ivEdt.setEnabled(false);
+            ivInput.setEnabled(false);
         }
+        ivSizeInput.setEnabled(false);
     }
 
     @Override
@@ -309,27 +232,28 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
                 out.writeUTF(algorithm.getAlgorithm());
                 out.writeUTF(mode);
                 out.writeUTF(padding);
-                out.writeInt(resolveValue(sf -> sf.getKeySize()));
-                out.writeUTF(keyEdt.getText());
+                out.writeInt(resolveValue(sf -> sf.getKeySizeInput()));
+                out.writeUTF(keyInput.getValue());
 
                 int ivSize = algorithm.getIVSize(mode);
                 if (ivSize != -1) {
                     out.writeInt(ivSize);
-                    out.writeUTF(ivEdt.getText());
+                    out.writeUTF(ivInput.getValue());
                 }
 
                 if (controller != null) {
                     controller.saveKey(out);
                 }
 
+                String message = "<html>Saved key successfully!<br>Key saved in: <b>" + path + "</b></html>";
                 int option = JOptionPane.showOptionDialog(
                         getRootPane(),
-                        "Lưu khóa thành công",
-                        "Lưu thành công",
+                        message,
+                        "Success",
                         JOptionPane.DEFAULT_OPTION,
                         JOptionPane.INFORMATION_MESSAGE,
                         null,
-                        new Object[]{"OK", "Xem tệp"},
+                        new Object[]{"OK", "Check File"},
                         "OK"
                 );
 
@@ -337,8 +261,8 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
                     Desktop.getDesktop().open(new File(path).getParentFile());
                 }
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(getRootPane(), "Failed to save the key.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -363,9 +287,7 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             String algorithmName = in.readUTF();
 
             if (!algorithmSupported.contains(algorithmName)) {
-                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new IOException();
             }
 
             setAlgorithm(SymmetricFactory.getSymmetric(Algorithm.valueOf(algorithmName)));
@@ -377,18 +299,14 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             String padding = in.readUTF();
 
             if (!exist(getMode(), mode)) {
-                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new IOException();
             }
 
             this.mode = mode;
             modeCbb.setSelectedItem(mode);
 
             if (!exist(getPadding(mode), padding)) {
-                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new IOException();
             }
 
             this.padding = padding;
@@ -399,8 +317,8 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             } else
                 loadKey(in);
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(getRootPane(), "Không thể đọc tệp. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Failed to load the key.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -411,67 +329,59 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             String key = in.readUTF();
 
             if (!algorithm.validateKeySize(keySize)) {
-                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new IOException();
             }
 
-            keySizeCbb.setSelectedItem(keySize);
-            keyEdt.setText(key);
+            keySizeInput.setValue(keySize + "");
+            keyInput.setValue(key);
 
             if (in.available() != 0) {
                 int ivSize = in.readInt();
                 String iv = in.readUTF();
 
                 if (algorithm.getIVSize(mode) != ivSize) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
+                    throw new IOException();
                 }
-                ivSizeEdt.setText(ivSize + "");
-                ivEdt.setText(iv);
+                ivSizeInput.setValue(ivSize + "");
+                ivInput.setValue(iv);
             } else {
-                ivSizeEdt.setText("");
-                ivEdt.setText("");
-                ivSizeEdt.setEnabled(false);
-                ivEdt.setEnabled(false);
+                ivSizeInput.setValue("");
+                ivInput.setValue("");
+                ivSizeInput.setEnabled(false);
+                ivInput.setEnabled(false);
             }
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Failed to load the key.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     @Override
     public void generateKey() {
         try {
-            keyEdt.hideError();
-            ivEdt.hideError();
+            keyInput.hideError();
+            ivInput.hideError();
 
-            int keySize = resolveValue(sf -> sf.getKeySize());
+            int keySize = resolveValue(sf -> sf.getKeySizeInput());
             algorithm.setKeySize(keySize);
             SecretKey key = algorithm.generateKey();
-            keyEdt.setText(Base64.getEncoder().encodeToString(key.getEncoded()));
+            keyInput.setValue(Base64.getEncoder().encodeToString(key.getEncoded()));
 
             int ivSize = algorithm.getIVSize(mode);
             if (ivSize != -1) {
-                ivEdt.setText(Base64.getEncoder().encodeToString(algorithm.generateIV().getIV()));
+                ivInput.setValue(Base64.getEncoder().encodeToString(algorithm.generateIV().getIV()));
             } else {
-                ivSizeEdt.setText("");
-                ivEdt.setText("");
+                ivSizeInput.setValue("");
+                ivInput.setValue("");
             }
 
             if (controller != null) {
                 controller.generateKey();
             }
         } catch (NoSuchAlgorithmException ex) {
-
+            JOptionPane.showMessageDialog(getRootPane(), "Failed to generate the key.\nError: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    public void setKeySize(int[] options) {
-        keySizeCbb.removeAllItems();
-        Arrays.stream(options).forEach(keySizeCbb::addItem);
     }
 
     public void setAlgorithm(Symmetric algorithm) {
@@ -511,8 +421,8 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             return algorithm.encryptBase64(plainText);
         } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
                  InvalidKeyException | InvalidAlgorithmParameterException | IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Mã hóa thất bại.\nError:\n" + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Encryption failed.\nError: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return null;
         }
     }
@@ -527,8 +437,8 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             return algorithm.decryptBase64(cipherText);
         } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
                  InvalidKeyException | InvalidAlgorithmParameterException | IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Giải mã thất bại.\nError:\n" + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Decryption failed.\nError: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return null;
         }
     }
@@ -543,15 +453,15 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             boolean res = algorithm.encryptFile(src, des, false);
 
             if (!res) {
-                JOptionPane.showMessageDialog(getRootPane(), "Mã hóa thất bại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(getRootPane(), "Encryption failed.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
 
             return res;
         } catch (FileNotFoundException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
                  InvalidAlgorithmParameterException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Mã hóa thất bại.\nError:\n" + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Encryption failed.\nError: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
     }
@@ -567,15 +477,15 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
             boolean res = algorithm.decryptFile(src, des);
 
             if (!res) {
-                JOptionPane.showMessageDialog(getRootPane(), "Giải mã thất bại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(getRootPane(), "Decryption failed.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
 
             return res;
         } catch (FileNotFoundException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
                  InvalidAlgorithmParameterException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Giải mã thất bại.\nError:\n" + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Decryption failed.\nError: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
     }
@@ -593,15 +503,15 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
         modeCbb.setSelectedItem(algorithm.getMode());
         paddingCbb.setSelectedItem(algorithm.getPadding());
-        keySizeCbb.setSelectedItem(algorithm.getKeySize());
-        keyEdt.setText(Base64.getEncoder().encodeToString(algorithm.getKey().getEncoded()));
+        keySizeInput.setValue(algorithm.getKeySize() + "");
+        keyInput.setValue(Base64.getEncoder().encodeToString(algorithm.getKey().getEncoded()));
 
         if (algorithm.getIVSize(algorithm.getMode()) != -1) {
-            ivSizeEdt.setText(algorithm.getIVSize(mode) + "");
-            ivEdt.setText(Base64.getEncoder().encodeToString(algorithm.getIv().getIV()));
+            ivSizeInput.setValue(algorithm.getIVSize(mode) + "");
+            ivInput.setValue(Base64.getEncoder().encodeToString(algorithm.getIv().getIV()));
         } else {
-            ivSizeEdt.setText("");
-            ivEdt.setText("");
+            ivSizeInput.setValue("");
+            ivInput.setValue("");
         }
     }
 
@@ -612,22 +522,22 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
 
     @Override
     public void configure() {
-        algorithm.setKeySize(resolveValue(sf -> sf.getKeySize()));
-        algorithm.setKey(new SecretKeySpec(Base64.getDecoder().decode(keyEdt.getText()), algorithm.getAlgorithm()));
+        algorithm.setKeySize(resolveValue(sf -> sf.getKeySizeInput()));
+        algorithm.setKey(new SecretKeySpec(Base64.getDecoder().decode(keyInput.getValue()), algorithm.getAlgorithm()));
         algorithm.setMode(Mode.valueOf(modeCbb.getSelectedItem().toString()));
         algorithm.setPadding(Padding.valueOf(paddingCbb.getSelectedItem().toString()));
 
         if (algorithm.getIVSize(mode) != -1) {
-            algorithm.setIv(new IvParameterSpec(Base64.getDecoder().decode(ivEdt.getText())));
+            algorithm.setIv(new IvParameterSpec(Base64.getDecoder().decode(ivInput.getValue())));
         } else {
-            ivEdt.setText("");
+            ivInput.setValue("");
             algorithm.setIv(null);
         }
     }
 
     @Override
-    public int getKeySize() {
-        return Integer.parseInt(keySizeCbb.getSelectedItem().toString());
+    public int getKeySizeInput() {
+        return Integer.parseInt(keySizeInput.getValue());
     }
 
     @Override

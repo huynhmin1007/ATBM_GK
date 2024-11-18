@@ -4,9 +4,7 @@ import encryption.common.Algorithm;
 import encryption.symmetric.Blowfish;
 import encryption.symmetric.Symmetric;
 import encryption.symmetric.SymmetricFactory;
-import ui.common.Dimensions;
-import ui.view.component.EditText;
-import ui.view.component.MaterialLabel;
+import ui.view.component.InputField;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,25 +14,16 @@ import java.io.IOException;
 public class BlowfishFragment extends SymmetricDecorator {
 
     private Blowfish algorithm;
-    private EditText keySizeEdt;
-    private JPanel keySizePanel;
-    private MaterialLabel keySizeLabel;
+    private InputField keySizeInput;
 
     public BlowfishFragment(SymmetricConcrete symmetricConcrete) {
         super(symmetricConcrete);
         algorithm = (Blowfish) SymmetricFactory.getSymmetric(Algorithm.Blowfish);
 
-        keySizeEdt = new EditText();
-        keySizeEdt.setInfo("Key size must be a multiple of 8, ranging from 32 to 448");
-        keySizeEdt.setNumericOnly();
-
-        keySizePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Dimensions.MARGIN_HORIZONTAL, Dimensions.MARGIN_VERTICAL));
-        keySizeLabel = new MaterialLabel("Key Size:");
-        keySizeLabel.setNotify("");
-        keySizeLabel.setPreferredSize(new Dimension(keySizeLabel.getPreferredSize().width + Dimensions.MARGIN_HORIZONTAL, keySizeLabel.getPreferredSize().height));
-
-        keySizePanel.add(keySizeLabel);
-        keySizePanel.add(keySizeEdt);
+        keySizeInput = new InputField("Key Size:");
+        keySizeInput.info("Key size must be a multiple of 8, ranging from 32 to 448\"");
+        keySizeInput.setInput(keySizeInput.input, 0);
+        keySizeInput.setNumericOnly();
     }
 
     @Override
@@ -49,72 +38,84 @@ public class BlowfishFragment extends SymmetricDecorator {
 
     @Override
     public void display() {
-        concrete.keySizePanel.setVisible(false);
+        concrete.keySizeInput.setVisible(false);
         concrete.setController(this);
 
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 0;
-        constraints.gridwidth = 2;
         constraints.weightx = 1;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        concrete.keyPanel.add(keySizePanel, constraints);
+
+        concrete.add(keySizeInput, constraints);
 
         super.display();
     }
 
     @Override
     public void displayWithAttributes() {
+        if (algorithm == null)
+            return;
+
+        keySizeInput.setValue(algorithm.getKeySize() + "");
         super.displayWithAttributes();
-        keySizeEdt.setText(getKeySize() + "");
     }
 
     @Override
     public void close() {
+        concrete.remove(keySizeInput);
+
         concrete.setController(null);
-        concrete.keyPanel.remove(keySizePanel);
-        concrete.keySizePanel.setVisible(true);
+        concrete.keySizeInput.setVisible(true);
     }
 
     @Override
-    public int getKeySize() {
+    public int getKeySizeInput() {
         if (!validateKeySize())
             return -1;
 
-        return Integer.parseInt(keySizeEdt.getText());
+        return Integer.parseInt(keySizeInput.getValue());
     }
 
     @Override
     public boolean validateInput() {
-        validateKeySize();
-        return super.validateInput();
+        boolean check = super.validateInput();
+        boolean validateKeySize = validateKeySize();
+
+        if (!check && validateKeySize)
+            JOptionPane.showMessageDialog(getRootPane(), "Please enter all require values.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+
+        return check && validateKeySize;
+    }
+
+    private boolean validateKeySize() {
+        if (keySizeInput.getValue().isEmpty()) {
+            keySizeInput.error();
+            JOptionPane.showMessageDialog(getRootPane(), "Please enter all require values.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        keySizeInput.hideError();
+
+        int keySize = Integer.parseInt(keySizeInput.getValue());
+
+        if (!algorithm.validateKeySize(keySize)) {
+            keySizeInput.info.setForeground(Color.RED);
+            JOptionPane.showMessageDialog(getRootPane(), "Please enter a valid key size.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        } else {
+            keySizeInput.info.setForeground(Color.GRAY);
+        }
+
+        return true;
     }
 
     @Override
     public void generateKey() {
-    }
-
-    private boolean validateKeySize() {
-        if (keySizeEdt.getText().isEmpty()) {
-            keySizeEdt.error("Vui lòng nhập kích thước khóa");
-            keySizeLabel.setNotify("", new Insets(20, 0, 20, 0));
-            return false;
-        }
-
-        keySizeEdt.hideError();
-        keySizeLabel.deleteNotify();
-
-        int keySize = Integer.parseInt(keySizeEdt.getText());
-
-        if (keySize < 32 || keySize > 448 || keySize % 8 != 0) {
-            keySizeEdt.infoLabel.setForeground(Color.RED);
-            return false;
-        } else {
-            keySizeEdt.infoLabel.setForeground(Color.GRAY);
-        }
-
-        return true;
     }
 
     @Override
@@ -124,29 +125,67 @@ public class BlowfishFragment extends SymmetricDecorator {
             String key = in.readUTF();
 
             if (!algorithm.validateKeySize(keySize)) {
-                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new IOException();
             }
 
-            keySizeEdt.setText(keySize + "");
-            concrete.keyEdt.setText(key);
+            keySizeInput.setValue(keySize + "");
+            concrete.keyInput.setValue(key);
 
             if (in.available() != 0) {
                 int ivSize = in.readInt();
                 String iv = in.readUTF();
 
                 if (algorithm.getIVSize(concrete.mode) != ivSize) {
-                    JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                            "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
+                    throw new IOException();
                 }
-                concrete.ivSizeEdt.setText(ivSize + "");
-                concrete.ivEdt.setText(iv);
+                concrete.ivSizeInput.setValue(ivSize + "");
+                concrete.ivInput.setEnabled(true);
+                concrete.ivInput.setValue(iv);
+            } else {
+                concrete.ivSizeInput.setValue("");
+                concrete.ivInput.setValue("");
+                concrete.ivSizeInput.setEnabled(false);
+                concrete.ivInput.setEnabled(false);
             }
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Failed to load the key.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    @Override
+    public String encryptBase64(String plainText) {
+        if (!validateInput()) {
+            return null;
+        }
+
+        return super.encryptBase64(plainText);
+    }
+
+    @Override
+    public String decryptBase64(String cipherText) {
+        if (!validateInput()) {
+            return null;
+        }
+
+        return super.decryptBase64(cipherText);
+    }
+
+    @Override
+    public boolean encryptFile(String src, String des) {
+        if (!validateInput()) {
+            return false;
+        }
+
+        return super.encryptFile(src, des);
+    }
+
+    @Override
+    public boolean decryptFile(String src, String des) {
+        if (!validateInput()) {
+            return false;
+        }
+
+        return super.decryptFile(src, des);
     }
 }

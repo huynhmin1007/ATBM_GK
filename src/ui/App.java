@@ -1,6 +1,6 @@
 package ui;
 
-import ui.view.activity.ASymmetricActivity;
+//import ui.view.activity.ASymmetricActivity;
 import ui.view.activity.HashActivity;
 import ui.view.activity.SymmetricActivity;
 import ui.view.custom.Theme;
@@ -26,7 +26,7 @@ public class App extends JFrame {
         tabbedPane = new JTabbedPane();
 
         tabbedPane.addTab("Mã hóa đối xứng", createTabWithPadding(SymmetricActivity.getInstance()));
-        tabbedPane.addTab("Mã hóa bất đối xứng", createTabWithPadding(ASymmetricActivity.getInstance()));
+//        tabbedPane.addTab("Mã hóa bất đối xứng", createTabWithPadding(ASymmetricActivity.getInstance()));
         tabbedPane.addTab("Hash", createTabWithPadding(HashActivity.getInstance()));
 
         add(tabbedPane);

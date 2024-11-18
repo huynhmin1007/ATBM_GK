@@ -5,8 +5,7 @@ import encryption.symmetric.ChaCha20;
 import encryption.symmetric.Symmetric;
 import encryption.symmetric.SymmetricFactory;
 import ui.common.Dimensions;
-import ui.view.component.EditText;
-import ui.view.component.MaterialLabel;
+import ui.view.component.InputField;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,66 +17,43 @@ import java.util.Base64;
 public class ChaCha20Fragment extends SymmetricDecorator {
 
     private ChaCha20 algorithm;
-    private EditText counterEdt, nonceEdt;
-    private EditText paramSpecEdt;
-    private JPanel paramSpecPanel;
-    private MaterialLabel parameterLabel;
+    private InputField counterInput, nonceInput, paramSpecInput;
+
+    private JPanel counterAndNoncePanel;
 
     public ChaCha20Fragment(SymmetricConcrete symmetricConcrete) {
         super(symmetricConcrete);
 
         algorithm = (ChaCha20) SymmetricFactory.getSymmetric(Algorithm.ChaCha20);
 
-        counterEdt = new EditText();
-        counterEdt.setInfo("Counter must be an Integer number");
-        counterEdt.setNumericOnly();
+        counterInput = new InputField("Counter:");
+        counterInput.info("Counter must be an Integer number");
+        counterInput.setValue("0");
+        counterInput.setNumericOnly();
 
-        nonceEdt = new EditText();
-        nonceEdt.setText("12");
-        nonceEdt.setEnabled(false);
-        nonceEdt.setPreferredSize(new Dimension(140, nonceEdt.getPreferredSize().height));
+        nonceInput = new InputField("Nonce:");
+        nonceInput.setValue("12");
+        nonceInput.info(" ");
+        nonceInput.label.setHorizontalAlignment(SwingConstants.RIGHT);
+        nonceInput.setEnabled(false);
 
-        paramSpecEdt = new EditText();
-
-        paramSpecPanel = new JPanel(new GridBagLayout());
+        paramSpecInput = new InputField("Parameter:");
 
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = Dimensions.DEFAULT_INSETS;
+        setLayout(new GridBagLayout());
 
-        MaterialLabel counterLabel = new MaterialLabel("Counter:");
-        counterLabel.setNotify("");
-        paramSpecPanel.add(counterLabel, constraints);
+        counterAndNoncePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        counterAndNoncePanel.add(counterInput);
+        counterAndNoncePanel.add(nonceInput);
 
-        constraints.gridx = 1;
-        counterEdt.setText("0");
-        paramSpecPanel.add(counterEdt, constraints);
+        add(counterAndNoncePanel, constraints);
 
-        MaterialLabel nonceLabel = new MaterialLabel("Nonce:");
-        nonceLabel.setNotify("", new Insets(15, 0, 10, 0));
-        nonceLabel.info.setHorizontalAlignment(SwingConstants.RIGHT);
-        constraints.gridx = 2;
-        paramSpecPanel.add(nonceLabel, constraints);
-
-        constraints.gridx = 3;
-        nonceEdt.setMargin(new Insets(0, 0, 20, 0));
-        paramSpecPanel.add(nonceEdt, constraints);
-
-        constraints.gridx = 4;
-        constraints.weightx = 1;
-        paramSpecPanel.add(new JPanel(), constraints);
-
-        constraints.gridx = 0;
         constraints.gridy = 1;
-        constraints.weightx = 0;
-        parameterLabel = new MaterialLabel("Parameter");
-        paramSpecPanel.add(parameterLabel, constraints);
-
-        constraints.gridx = 1;
         constraints.weightx = 1;
-        constraints.gridwidth = 4;
-        paramSpecPanel.add(paramSpecEdt, constraints);
+        add(counterAndNoncePanel, constraints);
     }
 
     @Override
@@ -92,69 +68,83 @@ public class ChaCha20Fragment extends SymmetricDecorator {
 
     @Override
     public void display() {
-        concrete.ivPanel.setVisible(false);
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 1;
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        concrete.add(paramSpecPanel, constraints);
+        concrete.ivSizeInput.setVisible(false);
+        concrete.ivInput.setVisible(false);
         concrete.setController(this);
+
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.weightx = 1;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+
+        concrete.add(counterAndNoncePanel, constraints);
+
+        constraints.gridy = 3;
+        concrete.add(paramSpecInput, constraints);
+
         super.display();
+    }
+
+    @Override
+    public void close() {
+        concrete.setController(null);
+        concrete.ivSizeInput.setVisible(true);
+        concrete.ivInput.setVisible(true);
+        concrete.remove(counterAndNoncePanel);
+        concrete.remove(paramSpecInput);
     }
 
     @Override
     public void configure() {
         super.configure();
-        algorithm.setParamSpec(Base64.getDecoder().decode(paramSpecEdt.getText().getBytes()));
-        algorithm.setCounter(Integer.parseInt(counterEdt.getText()));
+        algorithm.setParamSpec(Base64.getDecoder().decode(paramSpecInput.getValue().getBytes()));
+        algorithm.setCounter(Integer.parseInt(counterInput.getValue()));
     }
 
     @Override
     public void displayWithAttributes() {
         super.displayWithAttributes();
-        counterEdt.setText(algorithm.getCounter() + "");
-        paramSpecEdt.setText(algorithm.getParamSpec());
-        nonceEdt.setText(algorithm.getNonce() + "");
-    }
-
-    @Override
-    public void close() {
-        concrete.ivPanel.setVisible(true);
-        concrete.remove(paramSpecPanel);
-        concrete.setController(null);
+        counterInput.setValue(algorithm.getCounter() + "");
+        paramSpecInput.setValue(algorithm.getParamSpec());
+        nonceInput.setValue(algorithm.getNonce() + "");
     }
 
     @Override
     public void generateKey() {
-        if (counterEdt.getText().isEmpty()) {
-            counterEdt.setText("0");
+        if (counterInput.getValue().isEmpty()) {
+            counterInput.setValue("0");
         }
-        paramSpecEdt.hideError();
-        parameterLabel.deleteNotify();
+        paramSpecInput.hideError();
 
-        algorithm.setCounter(Integer.parseInt(counterEdt.getText()));
+        algorithm.setCounter(Integer.parseInt(counterInput.getValue()));
         algorithm.generateParamSpec();
 
-        paramSpecEdt.setText(algorithm.getParamSpec());
+        paramSpecInput.setValue(algorithm.getParamSpec());
     }
 
     @Override
     public boolean validateInput() {
-        validateParamSpec();
-        return super.validateInput();
+        boolean check = super.validateInput();
+        boolean validateKeySize = validateParamSpec();
+
+        if (!check && validateKeySize)
+            JOptionPane.showMessageDialog(getRootPane(), "Please enter all require values.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+
+        return check && validateKeySize;
     }
 
     private boolean validateParamSpec() {
-        if (paramSpecEdt.getText().isEmpty()) {
-            paramSpecEdt.error("Vui lòng nhập Parameter");
-            parameterLabel.setNotify("");
+        if (paramSpecInput.getValue().isEmpty()) {
+            paramSpecInput.error();
+            JOptionPane.showMessageDialog(getRootPane(), "Please enter all require values.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
-        paramSpecEdt.hideError();
-        parameterLabel.deleteNotify();
+        paramSpecInput.hideError();
 
         return true;
     }
@@ -164,17 +154,17 @@ public class ChaCha20Fragment extends SymmetricDecorator {
         if (!validateInput())
             return;
 
-        int counter = Integer.parseInt(counterEdt.getText());
-        int nonce = Integer.parseInt(nonceEdt.getText());
-        String parameter = paramSpecEdt.getText();
+        int counter = Integer.parseInt(counterInput.getValue());
+        int nonce = Integer.parseInt(nonceInput.getValue());
+        String parameter = paramSpecInput.getValue();
 
         try {
             out.writeInt(counter);
             out.writeInt(nonce);
             out.writeUTF(parameter);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Failed to save the key.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -188,20 +178,54 @@ public class ChaCha20Fragment extends SymmetricDecorator {
             String parameter = in.readUTF();
 
             if (!algorithm.validateKeySize(keySize)) {
-                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new IOException();
             }
 
-            concrete.keySizeCbb.setSelectedItem(keySize);
-            concrete.keyEdt.setText(key);
+            concrete.keySizeInput.setValue(keySize + "");
+            concrete.keyInput.setValue(key);
 
-            counterEdt.setText(counter + "");
-            nonceEdt.setText(nonce + "");
-            paramSpecEdt.setText(parameter);
+            counterInput.setValue(counter + "");
+            nonceInput.setValue(nonce + "");
+            paramSpecInput.setValue(parameter);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Failed to load the key.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    @Override
+    public String encryptBase64(String plainText) {
+        if (!validateInput()) {
+            return null;
+        }
+
+        return super.encryptBase64(plainText);
+    }
+
+    @Override
+    public String decryptBase64(String cipherText) {
+        if (!validateInput()) {
+            return null;
+        }
+
+        return super.decryptBase64(cipherText);
+    }
+
+    @Override
+    public boolean encryptFile(String src, String des) {
+        if (!validateInput()) {
+            return false;
+        }
+
+        return super.encryptFile(src, des);
+    }
+
+    @Override
+    public boolean decryptFile(String src, String des) {
+        if (!validateInput()) {
+            return false;
+        }
+
+        return super.decryptFile(src, des);
     }
 }

@@ -84,7 +84,7 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
     @Override
     public void configure() {
         concrete.configure();
-        concrete.algorithm.setKeySize(getKeySize());
+        concrete.algorithm.setKeySize(getKeySizeInput());
     }
 
     @Override
@@ -98,8 +98,8 @@ public abstract class SymmetricDecorator extends JPanel implements SymmetricFrag
     }
 
     @Override
-    public int getKeySize() {
-        return concrete.getKeySize();
+    public int getKeySizeInput() {
+        return concrete.getKeySizeInput();
     }
 
     @Override

@@ -2,6 +2,7 @@ package ui.view.component;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Arrays;
 import java.util.Vector;
 
 public class MaterialCombobox<T> extends JComboBox<T> {
@@ -39,5 +40,10 @@ public class MaterialCombobox<T> extends JComboBox<T> {
                 return true;
         }
         return false;
+    }
+
+    public void setItems(T[] items) {
+        removeAllItems();
+        Arrays.stream(items).forEach(this::addItem);
     }
 }

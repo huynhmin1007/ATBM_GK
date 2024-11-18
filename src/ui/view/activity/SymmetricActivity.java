@@ -88,7 +88,7 @@ public class SymmetricActivity extends BaseActivity {
 
     private void createInputPanel() {
         JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Dimensions.MARGIN_HORIZONTAL, 0));
-        MaterialLabel label = new MaterialLabel("Loại dữ liệu:");
+        MaterialLabel label = new MaterialLabel("Input type:");
         inputPanel.add(label);
 
         JRadioButton textOption = new JRadioButton("Text");
@@ -142,7 +142,7 @@ public class SymmetricActivity extends BaseActivity {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.NORTHWEST;
 
-        inputTextPanel.add(new MaterialLabel("Nhập nội dung:"), constraints);
+        inputTextPanel.add(new MaterialLabel("Input Text:"), constraints);
 
         inputTextArea = new JTextArea(8, 10);
         inputTextArea.setLineWrap(true);
@@ -162,15 +162,13 @@ public class SymmetricActivity extends BaseActivity {
 
     private void createInputFilePanel() {
         fileLoader = new FileLoader("File");
-        gbc.insets = new Insets(Dimensions.MARGIN_VERTICAL, 0, Dimensions.MARGIN_VERTICAL, 0);
+        gbc.insets = Dimensions.ZERO_INSETS;
         gbc.gridx = 0;
         gbc.gridy = 1;
         contentPane.add(fileLoader, gbc);
 
         fileLoader.setVisible(false);
-        fileLoader.setContainerPopup(this.getParent());
         fileLoader.browserBtn.addActionListener(e -> fileLoader.browseFile(null));
-        gbc.insets = Dimensions.ZERO_INSETS;
     }
 
     private void createInputAlgorithmPanel() {
@@ -182,7 +180,7 @@ public class SymmetricActivity extends BaseActivity {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.WEST;
 
-        algorithmPanel.add(new MaterialLabel("Thuật toán:"), constraints);
+        algorithmPanel.add(new MaterialLabel("Algorithm:"), constraints);
 
         constraints.gridx = 1;
         constraints.weightx = 1;
@@ -237,6 +235,7 @@ public class SymmetricActivity extends BaseActivity {
         gbc.insets = Dimensions.ZERO_INSETS;
         gbc.gridx = 0;
         gbc.gridy = 3;
+        gbc.weighty = 0;
         contentPane.add(decorator, gbc);
         decorator.display();
     }
@@ -249,7 +248,7 @@ public class SymmetricActivity extends BaseActivity {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.WEST;
 
-        JLabel resultLabel = new JLabel("Kết quả:");
+        JLabel resultLabel = new JLabel("Result:");
         resultLabel.setPreferredSize(new Dimension(Dimensions.LABEL_WIDTH, resultLabel.getPreferredSize().height));
         resultPanel.add(resultLabel, constraints);
 
@@ -269,8 +268,8 @@ public class SymmetricActivity extends BaseActivity {
 
         resultTabbedPane = new JTabbedPane();
         constraints.insets = new Insets(Dimensions.MARGIN_VERTICAL, Dimensions.MARGIN_HORIZONTAL, 0, Dimensions.MARGIN_HORIZONTAL);
-        resultTabbedPane.add("Mã hóa", scrollPane);
-        resultTabbedPane.add("Giải mã", scrollPane2);
+        resultTabbedPane.add("Encryption", scrollPane);
+        resultTabbedPane.add("Decryption", scrollPane2);
 
         constraints.weightx = 1.0;
         constraints.gridy = 1;
@@ -317,7 +316,7 @@ public class SymmetricActivity extends BaseActivity {
             String decrypt = decorator.decryptBase64(result);
             decryptTextArea.setText(decrypt);
         } else {
-            encryptTextArea.setText("Lỗi mã hóa");
+            encryptTextArea.setText("Encryption failed");
         }
 
         resultTabbedPane.setSelectedIndex(0);
@@ -326,7 +325,7 @@ public class SymmetricActivity extends BaseActivity {
     private void encryptFile() {
         String srcPath = fileLoader.getPath();
         if (srcPath == null || srcPath.isEmpty()) {
-            fileLoader.error("Vui lòng nhập đường dẫn");
+            fileLoader.error();
             return;
         } else
             fileLoader.hideError();
@@ -338,14 +337,15 @@ public class SymmetricActivity extends BaseActivity {
             boolean res = decorator.encryptFile(srcPath, desPath);
 
             if (res) {
+                String message = "<html>Encryption successfully!<br>File saved in: <b>" + desPath + "</b></html>";
                 int option = JOptionPane.showOptionDialog(
                         getRootPane(),
-                        "Mã hóa thành công!\nFile đã lưu ở: " + desPath,
-                        "Encryption Success",
+                        message,
+                        "Success",
                         JOptionPane.DEFAULT_OPTION,
                         JOptionPane.INFORMATION_MESSAGE,
                         null,
-                        new Object[]{"OK", "Xem tệp"},
+                        new Object[]{"OK", "Check File"},
                         "OK"
                 );
 
@@ -355,7 +355,7 @@ public class SymmetricActivity extends BaseActivity {
                         Desktop.getDesktop().open(file.getParentFile());
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(contentPane,
-                                "Không thể mở thư mục chứa file.",
+                                "Unable to open the File.",
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
                     }
@@ -370,7 +370,7 @@ public class SymmetricActivity extends BaseActivity {
             decryptTextArea.setText(result);
             encryptTextArea.setText("");
         } else {
-            decryptTextArea.setText("Lỗi giải mã");
+            decryptTextArea.setText("Decryption failed");
         }
         resultTabbedPane.setSelectedIndex(1);
     }
@@ -378,7 +378,7 @@ public class SymmetricActivity extends BaseActivity {
     private void decryptFile() {
         String srcPath = fileLoader.getPath();
         if (srcPath == null || srcPath.isEmpty()) {
-            fileLoader.error("Vui lòng nhập đường dẫn");
+            fileLoader.error();
             return;
         } else
             fileLoader.hideError();
@@ -390,14 +390,15 @@ public class SymmetricActivity extends BaseActivity {
             boolean res = decorator.decryptFile(srcPath, desPath);
 
             if (res) {
+                String message = "<html>Decryption successfully!<br>File saved in: <b>" + desPath + "</b></html>";
                 int option = JOptionPane.showOptionDialog(
                         getRootPane(),
-                        "Giải mã thành công!\nFile đã lưu ở: " + desPath,
-                        "Decryption Success",
+                        message,
+                        "Success",
                         JOptionPane.DEFAULT_OPTION,
                         JOptionPane.INFORMATION_MESSAGE,
                         null,
-                        new Object[]{"OK", "Xem tệp"},
+                        new Object[]{"OK", "Check File"},
                         "OK"
                 );
 
@@ -407,7 +408,7 @@ public class SymmetricActivity extends BaseActivity {
                         Desktop.getDesktop().open(file.getParentFile());
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(contentPane,
-                                "Không thể mở thư mục chứa file.",
+                                "Unable to open the File.",
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
                     }

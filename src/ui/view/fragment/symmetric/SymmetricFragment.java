@@ -26,7 +26,7 @@ public interface SymmetricFragment {
 
     void configure();
 
-    int getKeySize();
+    int getKeySizeInput();
 
     boolean validateInput();
 

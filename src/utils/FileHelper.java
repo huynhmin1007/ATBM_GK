@@ -37,11 +37,11 @@ public class FileHelper {
             int option = JOptionPane.showOptionDialog(
                     container,
                     msg,
-                    "Lưu thành công",
+                    "Success",
                     JOptionPane.DEFAULT_OPTION,
                     JOptionPane.INFORMATION_MESSAGE,
                     null,
-                    new Object[]{"OK", "Xem tệp"},
+                    new Object[]{"OK", "Check File"},
                     "OK"
             );
 
@@ -51,8 +51,8 @@ public class FileHelper {
 
             return true;
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(container, "Không thể lưu tệp. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(container, "Unable to save the file. Please try again.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
 
             return false;
         }
@@ -77,8 +77,8 @@ public class FileHelper {
             String selectedFilePath = selectedFile.getAbsolutePath();
 
             if (!selectedFile.exists()) {
-                JOptionPane.showMessageDialog(container, "Tệp không tồn tại. Vui lòng chọn lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(container, "File not Found. Please try again.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
                 return null;
             }
 
@@ -92,8 +92,8 @@ public class FileHelper {
                 }
 
                 if (!hasValidExtension) {
-                    JOptionPane.showMessageDialog(container, "Tệp đã chọn không có định dạng hợp lệ.",
-                            "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(container, "The selected file has an invalid format.",
+                            "Warning", JOptionPane.WARNING_MESSAGE);
                     return null;
                 }
             }
