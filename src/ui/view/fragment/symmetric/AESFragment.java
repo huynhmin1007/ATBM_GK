@@ -28,7 +28,6 @@ public class AESFragment extends SymmetricDecorator {
 
     @Override
     public void close() {
-        concrete.setController(null);
     }
 
     @Override

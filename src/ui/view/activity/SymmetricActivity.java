@@ -188,9 +188,7 @@ public class SymmetricActivity extends BaseActivity {
 
         constraints.gridx = 2;
         constraints.weightx = 0;
-        MaterialLabel modeLabel = new MaterialLabel("Mode:");
-        modeLabel.info.setHorizontalAlignment(SwingConstants.RIGHT);
-        algorithmPanel.add(modeLabel, constraints);
+        algorithmPanel.add(new MaterialLabel("Mode:", SwingConstants.RIGHT), constraints);
 
         constraints.gridx = 3;
         constraints.weightx = 1;
@@ -198,9 +196,7 @@ public class SymmetricActivity extends BaseActivity {
 
         constraints.gridx = 4;
         constraints.weightx = 0;
-        MaterialLabel paddingLabel = new MaterialLabel("Padding:");
-        paddingLabel.info.setHorizontalAlignment(SwingConstants.RIGHT);
-        algorithmPanel.add(paddingLabel, constraints);
+        algorithmPanel.add(new MaterialLabel("Padding:", SwingConstants.RIGHT), constraints);
 
         constraints.gridx = 5;
         constraints.weightx = 1;
@@ -248,7 +244,7 @@ public class SymmetricActivity extends BaseActivity {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.WEST;
 
-        JLabel resultLabel = new JLabel("Result:");
+        MaterialLabel resultLabel = new MaterialLabel("Result:");
         resultLabel.setPreferredSize(new Dimension(Dimensions.LABEL_WIDTH, resultLabel.getPreferredSize().height));
         resultPanel.add(resultLabel, constraints);
 

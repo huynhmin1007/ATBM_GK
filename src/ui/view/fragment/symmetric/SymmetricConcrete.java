@@ -379,6 +379,11 @@ public class SymmetricConcrete extends JPanel implements SymmetricFragment {
                 controller.generateKey();
             }
         } catch (NoSuchAlgorithmException ex) {
+            keyInput.setValue("");
+            int ivSize = algorithm.getIVSize(mode);
+            if (ivSize != -1) {
+                ivInput.setValue("");
+            }
             JOptionPane.showMessageDialog(getRootPane(), "Failed to generate the key.\nError: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }

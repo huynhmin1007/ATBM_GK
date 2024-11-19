@@ -5,9 +5,9 @@ import encryption.asymmetric.RSA;
 import encryption.common.Algorithm;
 import encryption.symmetric.Symmetric;
 import ui.common.Dimensions;
-import ui.view.component.EditText;
+import ui.view.component.ComboboxInputField;
+import ui.view.component.InputField;
 import ui.view.component.MaterialCombobox;
-import ui.view.component.MaterialLabel;
 import utils.FileHelper;
 
 import javax.crypto.BadPaddingException;
@@ -34,11 +34,10 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
 
     public GridBagConstraints gbc;
     public MaterialCombobox<String> modeCbb, paddingCbb;
-    public MaterialCombobox<Integer> keySizeCbb;
-    public EditText privateKeyEdt, publicKeyEdt;
-    public MaterialLabel privateKeyLabel, publicKeyLabel;
     public JButton loadKey, genKey, saveKey;
     public JRadioButton enPrivate, enPublic;
+    public InputField privateKeyEdt, publicKeyEdt;
+    public ComboboxInputField keySizeCbb;
 
     public String oldPath;
 
@@ -71,6 +70,10 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
         loadKey.addActionListener(e -> {
             loadKey();
         });
+
+        gbc.weighty = 1;
+        gbc.gridy = 100;
+        add(new JPanel(), gbc);
     }
 
     private void createModeAndPaddingGUI() {
@@ -87,77 +90,39 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
     }
 
     private void createKeyGUI() {
-        MaterialLabel keySizeLabel = new MaterialLabel("Key Size:");
-        keySizeCbb = new MaterialCombobox<>();
-        privateKeyLabel = new MaterialLabel("Private Key:");
-        privateKeyEdt = new EditText();
-        privateKeyEdt.setPreferredSize(new Dimension(140, privateKeyEdt.getPreferredSize().height));
+        keySizeCbb = new ComboboxInputField("Key Size:");
+        gbc.gridy = 0;
+        add(keySizeCbb, gbc);
 
-        publicKeyLabel = new MaterialLabel("Public Key:");
-        publicKeyEdt = new EditText();
-        publicKeyEdt.setPreferredSize(new Dimension(140, publicKeyEdt.getPreferredSize().height));
-
-        enPrivate = new JRadioButton("Private Key");
-        enPublic = new JRadioButton("Public Key");
-        MaterialLabel enTypeLabel = new MaterialLabel("Encryption Key:");
+        JLabel enTypeLabel = new JLabel("Encryption Key:");
         JPanel enTypePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Dimensions.MARGIN_HORIZONTAL, Dimensions.MARGIN_VERTICAL + 5));
         enTypeLabel.setPreferredSize(new Dimension(enTypeLabel.getPreferredSize().width + Dimensions.MARGIN_HORIZONTAL, enTypeLabel.getPreferredSize().height));
-
         enTypePanel.add(enTypeLabel);
 
+        enPublic = new JRadioButton("Public Key");
         enTypePanel.add(enPublic);
         enPublic.setMargin(new Insets(0, 0, 0, 3 * Dimensions.MARGIN_HORIZONTAL));
-        enTypePanel.add(enPrivate);
         enPublic.setSelected(true);
+
+        enPrivate = new JRadioButton("Private Key");
+        enTypePanel.add(enPrivate);
 
         ButtonGroup btnGroup = new ButtonGroup();
         btnGroup.add(enPrivate);
         btnGroup.add(enPublic);
 
-        JPanel keyPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = Dimensions.DEFAULT_INSETS;
+        gbc.gridy = 1;
+        add(enTypePanel, gbc);
 
-        JPanel keySizePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, Dimensions.MARGIN_HORIZONTAL, Dimensions.MARGIN_VERTICAL));
-        keySizeLabel.setPreferredSize(new Dimension(keySizeLabel.getPreferredSize().width + Dimensions.MARGIN_HORIZONTAL, keySizeLabel.getPreferredSize().height));
+        privateKeyEdt = new InputField("Private Key:");
+        privateKeyEdt.info("Drag and drop a file here to load the key.");
+        gbc.gridy = 2;
+        add(privateKeyEdt, gbc);
 
-        keySizePanel.add(keySizeLabel);
-        keySizePanel.add(keySizeCbb);
-
-        constraints.gridx = 0;
-        constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
-        constraints.insets = Dimensions.ZERO_INSETS;
-        keyPanel.add(keySizePanel, constraints);
-
-        constraints.gridy = 1;
-        keyPanel.add(enTypePanel, constraints);
-
-        constraints.gridwidth = 1;
-        constraints.insets = Dimensions.DEFAULT_INSETS;
-        constraints.gridy = 2;
-        constraints.weightx = 0.0;
-        keyPanel.add(privateKeyLabel, constraints);
-
-        constraints.gridx = 1;
-        constraints.weightx = 1.0;
-        keyPanel.add(privateKeyEdt, constraints);
-
-        constraints.gridwidth = 1;
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        constraints.weightx = 0.0;
-        keyPanel.add(publicKeyLabel, constraints);
-
-        constraints.gridx = 1;
-        constraints.weightx = 1.0;
-        keyPanel.add(publicKeyEdt, constraints);
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        add(keyPanel, gbc);
+        publicKeyEdt = new InputField("Public Key:");
+        publicKeyEdt.info("Drag and drop a file here to load the key.");
+        gbc.gridy = 3;
+        add(publicKeyEdt, gbc);
     }
 
     private void createButtonGroup() {
@@ -170,7 +135,7 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
         btnPanel.add(loadKey);
         btnPanel.add(saveKey);
 
-        gbc.gridy = 1;
+        gbc.gridy = 4;
         add(btnPanel, gbc);
     }
 
@@ -179,31 +144,23 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
     }
 
     public boolean validateKey() {
-        String privateKey = privateKeyEdt.getText().trim();
-        String publicKey = publicKeyEdt.getText().trim();
+        String privateKey = privateKeyEdt.getValue().trim();
+        String publicKey = publicKeyEdt.getValue().trim();
 
         int count = 0;
 
         if (!privateKey.isEmpty()) {
             privateKeyEdt.hideError();
-            privateKeyLabel.deleteNotify();
             count++;
+        } else {
+            privateKeyEdt.error();
         }
 
         if (!publicKey.isEmpty()) {
             publicKeyEdt.hideError();
-            publicKeyLabel.deleteNotify();
             count++;
-        }
-
-        if (privateKey.isEmpty()) {
-            privateKeyEdt.error("Vui lòng nhập khóa");
-            privateKeyLabel.setNotify("");
-        }
-
-        if (publicKey.isEmpty()) {
-            publicKeyEdt.error("Vui lòng nhập khóa");
-            publicKeyLabel.setNotify("");
+        } else {
+            publicKeyEdt.error();
         }
 
         return count == 2;
@@ -249,21 +206,22 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
                 out.writeUTF(mode);
                 out.writeUTF(padding);
                 out.writeInt(resolveValue(sf -> sf.getKeySize()));
-                out.writeUTF(privateKeyEdt.getText());
-                out.writeUTF(publicKeyEdt.getText());
+                out.writeUTF(privateKeyEdt.getValue());
+                out.writeUTF(publicKeyEdt.getValue());
 
                 if (controller != null) {
                     controller.saveKey(out);
                 }
 
+                String message = "<html>Saved key successfully!<br>Key saved in: <b>" + path + "</b></html>";
                 int option = JOptionPane.showOptionDialog(
                         getRootPane(),
-                        "Lưu khóa thành công",
-                        "Lưu thành công",
+                        message,
+                        "Success",
                         JOptionPane.DEFAULT_OPTION,
                         JOptionPane.INFORMATION_MESSAGE,
                         null,
-                        new Object[]{"OK", "Xem tệp"},
+                        new Object[]{"OK", "Check File"},
                         "OK"
                 );
 
@@ -271,8 +229,8 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
                     Desktop.getDesktop().open(new File(path).getParentFile());
                 }
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(getRootPane(), "Failed to save the key.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -282,7 +240,7 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
     }
 
     private void addDragAndDrop() {
-        new DropTarget(privateKeyEdt.textField, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
+        new DropTarget(privateKeyEdt.input, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
             @Override
             public void drop(DropTargetDropEvent event) {
                 try {
@@ -298,7 +256,7 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
                             if (droppedFile.isFile()) {
                                 loadKey(droppedFile);
                             } else {
-                                JOptionPane.showMessageDialog(getRootPane(), "Vui lòng nhập vào File, không phải Folder.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(getRootPane(), "Please drop a valid file.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
                             }
                         }
                     }
@@ -308,7 +266,7 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             }
         });
 
-        new DropTarget(publicKeyEdt.textField, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
+        new DropTarget(publicKeyEdt.input, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
             @Override
             public void drop(DropTargetDropEvent event) {
                 try {
@@ -324,7 +282,7 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
                             if (droppedFile.isFile()) {
                                 loadKey(droppedFile);
                             } else {
-                                JOptionPane.showMessageDialog(getRootPane(), "Vui lòng nhập vào File, không phải Folder.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(getRootPane(), "Please drop a valid file.", "Invalid Drop", JOptionPane.ERROR_MESSAGE);
                             }
                         }
                     }
@@ -376,8 +334,8 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             } else
                 loadKey(in);
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(getRootPane(), "Không thể đọc tệp. Vui lòng thử lại.",
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Failed to load the key.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -400,14 +358,12 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             String publicKey = in.readUTF();
 
             if (!algorithm.validateKeySize(keySize)) {
-                JOptionPane.showMessageDialog(getRootPane(), "Tệp không hợp lệ. Vui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new IOException();
             }
 
-            keySizeCbb.setSelectedItem(keySize);
-            privateKeyEdt.setText(privateKey);
-            publicKeyEdt.setText(publicKey);
+            keySizeCbb.setValue(keySize + "");
+            privateKeyEdt.setValue(privateKey);
+            publicKeyEdt.setValue(publicKey);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(getRootPane(), "Không thể lưu tệp. Vui lòng thử lại.",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -427,24 +383,26 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             PublicKey publicKey = algorithm.getPublicKey();
 
             if (enPublic.isSelected()) {
-                privateKeyEdt.setText(Base64.getEncoder().encodeToString(privateKey.getEncoded()));
-                publicKeyEdt.setText(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
+                privateKeyEdt.setValue(Base64.getEncoder().encodeToString(privateKey.getEncoded()));
+                publicKeyEdt.setValue(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
             } else {
-                privateKeyEdt.setText(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
-                publicKeyEdt.setText(Base64.getEncoder().encodeToString(privateKey.getEncoded()));
+                privateKeyEdt.setValue(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
+                publicKeyEdt.setValue(Base64.getEncoder().encodeToString(privateKey.getEncoded()));
             }
 
             if (controller != null) {
                 controller.generateKey();
             }
         } catch (NoSuchAlgorithmException ex) {
-
+            privateKeyEdt.setValue("");
+            publicKeyEdt.setValue("");
+            JOptionPane.showMessageDialog(getRootPane(), "Failed to generate the key.\nError: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     public void setKeySize(int[] options) {
-        keySizeCbb.removeAllItems();
-        Arrays.stream(options).forEach(keySizeCbb::addItem);
+        keySizeCbb.setItems(Arrays.stream(options).mapToObj(String::valueOf).toArray(String[]::new));
     }
 
     public void setAlgorithm(RSA algorithm) {
@@ -484,8 +442,8 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             return algorithm.encryptBase64(plainText);
         } catch (IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | NoSuchAlgorithmException |
                  InvalidKeyException | IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Mã hóa thất bại.\nError:\n" + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Encryption failed.\nError: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return null;
         }
     }
@@ -500,8 +458,8 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             return algorithm.decryptBase64(cipherText);
         } catch (IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | NoSuchAlgorithmException |
                  InvalidKeyException | IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Giải mã thất bại.\nError:\n" + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Decryption failed.\nError: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return null;
         }
     }
@@ -516,15 +474,15 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             boolean res = algorithm.encryptFile(src, des, symmetric);
 
             if (!res) {
-                JOptionPane.showMessageDialog(getRootPane(), "Mã hóa thất bại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(getRootPane(), "Encryption failed.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
 
             return res;
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | FileNotFoundException |
                  NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Mã hóa thất bại.\nError:\n" + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Encryption failed.\nError: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
     }
@@ -539,15 +497,15 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
             Symmetric res = algorithm.decryptFile(src, des);
 
             if (res == null) {
-                JOptionPane.showMessageDialog(getRootPane(), "Giải mã thất bại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(getRootPane(), "Decryption failed.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
 
             return res;
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | FileNotFoundException |
                  NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-            JOptionPane.showMessageDialog(getRootPane(), "Giải mã thất bại.\nError:\n" + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getRootPane(), "Decryption failed.\nError: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return null;
         }
     }
@@ -567,14 +525,15 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
     public void configureEncrypt() {
         try {
             if (enPrivate.isSelected()) {
-                algorithm.setPublicKey(privateKeyEdt.getText());
+                algorithm.setPublicKey(privateKeyEdt.getValue());
             } else
-                algorithm.setPublicKey(publicKeyEdt.getText());
+                algorithm.setPublicKey(publicKeyEdt.getValue());
 
             algorithm.setMode(modeCbb.getSelectedItem().toString());
             algorithm.setPadding(paddingCbb.getSelectedItem().toString());
         } catch (Exception e) {
-
+            JOptionPane.showMessageDialog(getRootPane(), (enPrivate.isSelected() ? "Private Key" : "Public Key") + " is not valid.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -582,53 +541,49 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
     public void configureDecrypt() {
         try {
             if (enPrivate.isSelected()) {
-                algorithm.setPrivateKey(publicKeyEdt.getText());
+                algorithm.setPrivateKey(publicKeyEdt.getValue());
             } else
-                algorithm.setPrivateKey(privateKeyEdt.getText());
+                algorithm.setPrivateKey(privateKeyEdt.getValue());
 
             algorithm.setMode(modeCbb.getSelectedItem().toString());
             algorithm.setPadding(paddingCbb.getSelectedItem().toString());
         } catch (Exception e) {
+            JOptionPane.showMessageDialog(getRootPane(), (enPrivate.isSelected() ? "Public Key" : "Private Key") + " is not valid.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     @Override
     public int getKeySize() {
-        return Integer.parseInt(keySizeCbb.getSelectedItem().toString());
+        return Integer.parseInt(keySizeCbb.getValue());
     }
 
     @Override
     public boolean validateInputEncrypt() {
         if (enPrivate.isSelected()) {
             publicKeyEdt.hideError();
-            publicKeyLabel.deleteNotify();
 
-            String privateKey = privateKeyEdt.getText().trim();
+            String privateKey = privateKeyEdt.getValue().trim();
 
             if (!privateKey.isEmpty()) {
                 privateKeyEdt.hideError();
-                privateKeyLabel.deleteNotify();
                 return true;
             }
 
-            privateKeyEdt.error("Vui lòng nhập khóa");
-            privateKeyLabel.setNotify("");
+            privateKeyEdt.error();
             return false;
         }
 
         privateKeyEdt.hideError();
-        privateKeyLabel.deleteNotify();
 
-        String publicKey = publicKeyEdt.getText().trim();
+        String publicKey = publicKeyEdt.getValue().trim();
 
         if (!publicKey.isEmpty()) {
             publicKeyEdt.hideError();
-            publicKeyLabel.deleteNotify();
             return true;
         }
 
-        publicKeyEdt.error("Vui lòng nhập khóa");
-        publicKeyLabel.setNotify("");
+        publicKeyEdt.error();
         return false;
     }
 
@@ -636,34 +591,28 @@ public class ASymmetricConcrete extends JPanel implements ASymmetricFragment {
     public boolean validateInputDecrypt() {
         if (enPrivate.isSelected()) {
             privateKeyEdt.hideError();
-            privateKeyLabel.deleteNotify();
 
-            String publicKey = publicKeyEdt.getText().trim();
+            String publicKey = publicKeyEdt.getValue().trim();
 
             if (!publicKey.isEmpty()) {
                 publicKeyEdt.hideError();
-                publicKeyLabel.deleteNotify();
                 return true;
             }
 
-            publicKeyEdt.error("Vui lòng nhập khóa");
-            publicKeyLabel.setNotify("");
+            publicKeyEdt.error();
             return false;
         }
 
         publicKeyEdt.hideError();
-        publicKeyLabel.deleteNotify();
 
-        String privateKey = privateKeyEdt.getText().trim();
+        String privateKey = privateKeyEdt.getValue().trim();
 
         if (!privateKey.isEmpty()) {
             privateKeyEdt.hideError();
-            privateKeyLabel.deleteNotify();
             return true;
         }
 
-        privateKeyEdt.error("Vui lòng nhập khóa");
-        privateKeyLabel.setNotify("");
+        privateKeyEdt.error();
         return false;
     }
 
